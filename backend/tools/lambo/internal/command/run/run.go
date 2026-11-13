@@ -14,9 +14,9 @@ import (
 	"time"
 
 	"github.com/AlecAivazis/survey/v2"
-	"github.com/Edward-Jackie/lambo/config"
-	"github.com/Edward-Jackie/lambo/internal/pkg/helper"
-	"github.com/Edward-Jackie/lambo/internal/pkg/pathignore"
+	"github.com/Edward-Jackie/lambo/backend/tools/lambo/config"
+	"github.com/Edward-Jackie/lambo/backend/tools/lambo/internal/pkg/helper"
+	"github.com/Edward-Jackie/lambo/backend/tools/lambo/internal/pkg/pathignore"
 	"github.com/fsnotify/fsnotify"
 	"github.com/kballard/go-shellquote"
 	"github.com/spf13/cobra"

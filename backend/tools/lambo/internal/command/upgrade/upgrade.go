@@ -5,7 +5,7 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/Edward-Jackie/lambo/config"
+	"github.com/Edward-Jackie/lambo/backend/tools/lambo/config"
 	"github.com/spf13/cobra"
 )
 

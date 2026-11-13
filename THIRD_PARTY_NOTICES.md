@@ -8,7 +8,7 @@ Lambo 使用 MIT 许可。导入源码保留原作者的版权和许可，根目
 | --- | --- | --- | --- |
 | `frontend/` | https://github.com/vbenjs/vue-vben-admin | `main` · `53b47f8ce99ecea11aa04c9c876a2f18c479838f` | [MIT，Vben](frontend/LICENSE) |
 | `backend/` | https://github.com/go-nunu/nunu-layout-basic | `main` · `7eb2e6da206f4f0da89ab1aea68dece2d976c01f` | [MIT，Nunu](backend/LICENSE) |
-| 根目录 CLI（`cmd/`、`internal/`、`config/`、`tpl/`） | https://github.com/go-nunu/nunu | `main` · `f20c775987517384ad2c931222a4bbd7b2dffbdb` | [MIT，Nunu CLI](licenses/nunu-cli.LICENSE) |
+| `backend/tools/lambo/` CLI | https://github.com/go-nunu/nunu | `main` · `f20c775987517384ad2c931222a4bbd7b2dffbdb` | [MIT，Nunu CLI](backend/tools/lambo/LICENSE) |
 
 前端导入时的根包版本为 `5.7.0`。后端使用 Nunu Basic 模板，已修改为 Lambo 模块路径。后续导入 Nunu CLI 作为开发工具起点，统一命令为 `lambo`，保留和适配热重载、Wire 等实现，并新增 Lambo 的项目初始化与前端生成能力；CLI 不作为业务运行服务。
 

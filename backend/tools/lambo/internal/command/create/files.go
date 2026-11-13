@@ -13,7 +13,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/Edward-Jackie/lambo/tpl"
+	"github.com/Edward-Jackie/lambo/backend/tools/lambo/tpl"
 )
 
 type outputFile struct {

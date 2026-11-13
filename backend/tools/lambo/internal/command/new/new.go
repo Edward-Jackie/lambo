@@ -12,8 +12,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/Edward-Jackie/lambo/config"
-	"github.com/Edward-Jackie/lambo/internal/pkg/helper"
+	"github.com/Edward-Jackie/lambo/backend/tools/lambo/config"
+	"github.com/Edward-Jackie/lambo/backend/tools/lambo/internal/pkg/helper"
 	"github.com/spf13/cobra"
 	"golang.org/x/mod/modfile"
 	"golang.org/x/mod/module"
@@ -60,16 +60,16 @@ func run(cmd *cobra.Command, args []string) error {
 	if info, err := os.Stat(filepath.Join(target, "frontend", "apps", "web-ele", "package.json")); err != nil || info.IsDir() {
 		return fmt.Errorf("模板缺少 Vben Element Plus 应用")
 	}
-	for _, dir := range []string{".", "backend"} {
-		base := filepath.Join(target, dir)
+	for _, module := range []struct{ dir, suffix string }{
+		{"backend", "/backend"},
+		{"backend/tools/lambo", "/backend/tools/lambo"},
+	} {
+		base := filepath.Join(target, module.dir)
 		oldModule, err := helper.ReadModulePath(base)
 		if err != nil {
 			return fmt.Errorf("模板必须包含 CLI 和 backend 两个 Go 模块：%w", err)
 		}
-		newModule := mod
-		if dir == "backend" {
-			newModule += "/backend"
-		}
+		newModule := mod + module.suffix
 		if err := replaceModule(base, oldModule, newModule); err != nil {
 			return err
 		}
@@ -95,6 +95,14 @@ func replaceModule(root, oldModule, newModule string) error {
 		if entry.IsDir() {
 			if path != root && (entry.Name() == ".git" || entry.Name() == "backend" || entry.Name() == "frontend" || entry.Name() == "node_modules") {
 				return filepath.SkipDir
+			}
+			// 独立工具模块单独改名，不随业务模块递归改写。
+			if path != root {
+				if _, err := os.Stat(filepath.Join(path, "go.mod")); err == nil {
+					return filepath.SkipDir
+				} else if !os.IsNotExist(err) {
+					return err
+				}
 			}
 			return nil
 		}

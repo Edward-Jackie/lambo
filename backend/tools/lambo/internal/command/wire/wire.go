@@ -10,8 +10,8 @@ import (
 	"sort"
 
 	"github.com/AlecAivazis/survey/v2"
-	"github.com/Edward-Jackie/lambo/config"
-	"github.com/Edward-Jackie/lambo/internal/pkg/helper"
+	"github.com/Edward-Jackie/lambo/backend/tools/lambo/config"
+	"github.com/Edward-Jackie/lambo/backend/tools/lambo/internal/pkg/helper"
 	"github.com/spf13/cobra"
 )
 
@@ -137,7 +137,7 @@ func findWire(base string) (map[string]string, error) {
 		}
 		if entry.IsDir() {
 			switch entry.Name() {
-			case ".git", "vendor", "node_modules", "frontend", ".artifacts", ".tmp":
+			case ".git", "vendor", "node_modules", "frontend", "tools", ".artifacts", ".tmp":
 				if path != searchRoot {
 					return filepath.SkipDir
 				}

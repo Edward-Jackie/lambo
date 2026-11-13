@@ -1,4 +1,4 @@
-module github.com/Edward-Jackie/lambo
+module github.com/Edward-Jackie/lambo/backend/tools/lambo
 
 go 1.25.8
 

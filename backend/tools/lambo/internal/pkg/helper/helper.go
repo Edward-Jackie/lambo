@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/Edward-Jackie/lambo/internal/pkg/pathignore"
+	"github.com/Edward-Jackie/lambo/backend/tools/lambo/internal/pkg/pathignore"
 	"github.com/spf13/cobra"
 	"golang.org/x/mod/modfile"
 )

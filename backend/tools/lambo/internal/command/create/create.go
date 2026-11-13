@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/Edward-Jackie/lambo/internal/pkg/helper"
+	"github.com/Edward-Jackie/lambo/backend/tools/lambo/internal/pkg/helper"
 	"github.com/spf13/cobra"
 )
 
@@ -13,7 +13,7 @@ var dryRun, checkOnly bool
 
 var CmdCreate = &cobra.Command{
 	Use: "create", Short: "生成后端分层组件或 Vben Element Plus 业务页面",
-	Example: "lambo create frontend category --schema examples/category.json --dry-run",
+	Example: "lambo create frontend category --schema backend/tools/lambo/examples/category.json --dry-run",
 	Args:    cobra.NoArgs,
 	RunE:    func(cmd *cobra.Command, _ []string) error { return cmd.Help() },
 }

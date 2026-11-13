@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Edward-Jackie/lambo/internal/command"
+	"github.com/Edward-Jackie/lambo/backend/tools/lambo/internal/command"
 )
 
 func main() {
