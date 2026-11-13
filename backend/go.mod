@@ -1,4 +1,4 @@
-module github.com/go-nunu/nunu-layout-basic
+module github.com/Edward-Jackie/lambo/backend
 
 go 1.16
 

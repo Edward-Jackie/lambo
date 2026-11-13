@@ -2,10 +2,10 @@ package main
 
 import (
 	"fmt"
-	"github.com/go-nunu/nunu-layout-basic/cmd/server/wire"
-	"github.com/go-nunu/nunu-layout-basic/pkg/config"
-	"github.com/go-nunu/nunu-layout-basic/pkg/http"
-	"github.com/go-nunu/nunu-layout-basic/pkg/log"
+	"github.com/Edward-Jackie/lambo/backend/cmd/server/wire"
+	"github.com/Edward-Jackie/lambo/backend/pkg/config"
+	"github.com/Edward-Jackie/lambo/backend/pkg/http"
+	"github.com/Edward-Jackie/lambo/backend/pkg/log"
 	"go.uber.org/zap"
 )
 

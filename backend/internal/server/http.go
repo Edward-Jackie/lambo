@@ -2,10 +2,10 @@ package server
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/go-nunu/nunu-layout-basic/internal/handler"
-	"github.com/go-nunu/nunu-layout-basic/internal/middleware"
-	"github.com/go-nunu/nunu-layout-basic/pkg/helper/resp"
-	"github.com/go-nunu/nunu-layout-basic/pkg/log"
+	"github.com/Edward-Jackie/lambo/backend/internal/handler"
+	"github.com/Edward-Jackie/lambo/backend/internal/middleware"
+	"github.com/Edward-Jackie/lambo/backend/pkg/helper/resp"
+	"github.com/Edward-Jackie/lambo/backend/pkg/log"
 )
 
 func NewServerHTTP(
@@ -19,7 +19,7 @@ func NewServerHTTP(
 	)
 	r.GET("/", func(ctx *gin.Context) {
 		resp.HandleSuccess(ctx, map[string]interface{}{
-			"say": "Hi Nunu!",
+			"say": "Hi Lambo!",
 		})
 	})
 	r.GET("/user", userHandler.GetUserById)

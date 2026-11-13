@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"github.com/go-nunu/nunu-layout-basic/internal/model"
+	"github.com/Edward-Jackie/lambo/backend/internal/model"
 )
 
 type UserRepository interface {

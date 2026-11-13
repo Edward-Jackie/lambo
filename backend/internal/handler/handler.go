@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"github.com/go-nunu/nunu-layout-basic/pkg/log"
+	"github.com/Edward-Jackie/lambo/backend/pkg/log"
 )
 
 type Handler struct {

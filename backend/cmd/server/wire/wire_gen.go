@@ -7,12 +7,12 @@
 package wire
 
 import (
+	"github.com/Edward-Jackie/lambo/backend/internal/handler"
+	"github.com/Edward-Jackie/lambo/backend/internal/repository"
+	"github.com/Edward-Jackie/lambo/backend/internal/server"
+	"github.com/Edward-Jackie/lambo/backend/internal/service"
+	"github.com/Edward-Jackie/lambo/backend/pkg/log"
 	"github.com/gin-gonic/gin"
-	"github.com/go-nunu/nunu-layout-basic/internal/handler"
-	"github.com/go-nunu/nunu-layout-basic/internal/repository"
-	"github.com/go-nunu/nunu-layout-basic/internal/server"
-	"github.com/go-nunu/nunu-layout-basic/internal/service"
-	"github.com/go-nunu/nunu-layout-basic/pkg/log"
 	"github.com/google/wire"
 	"github.com/spf13/viper"
 )

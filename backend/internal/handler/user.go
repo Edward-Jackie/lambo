@@ -2,8 +2,8 @@ package handler
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/go-nunu/nunu-layout-basic/internal/service"
-	"github.com/go-nunu/nunu-layout-basic/pkg/helper/resp"
+	"github.com/Edward-Jackie/lambo/backend/internal/service"
+	"github.com/Edward-Jackie/lambo/backend/pkg/helper/resp"
 	"go.uber.org/zap"
 	"net/http"
 )
