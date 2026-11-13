@@ -1,0 +1,13 @@
+{
+  "name": "category",
+  "title": "分类管理",
+  "api": "/api/categories",
+  "permission": "catalog:category",
+  "idType": "number",
+  "fields": [
+    {"name": "name", "label": "分类名称", "type": "string", "required": true, "search": true, "maxLength": 64},
+    {"name": "status", "label": "状态", "type": "number", "required": true, "search": true, "default": 1, "options": [{"label": "启用", "value": 1}, {"label": "停用", "value": 0}]},
+    {"name": "sort", "label": "排序", "type": "number", "required": true, "default": 0},
+    {"name": "remark", "label": "备注", "type": "string", "maxLength": 500}
+  ]
+}
