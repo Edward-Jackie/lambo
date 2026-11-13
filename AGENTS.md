@@ -27,7 +27,10 @@
 
 ## CLI 与生成器
 
-- 根 Go 模块仅承载开发工具，`backend/` 是独立业务 Go 模块；两者分别验证，不把工具依赖引入服务。
+- `backend/` 承载业务 Go 模块，`backend/tools/lambo/` 是独立的 CLI Go 模块；两者分别验证，不把工具依赖引入服务。
+- 一级业务目录只允许 `backend/`、`docs/`、`frontend/`、`deploy/`、`.skills/`；`.git/` 由 Git 管理。命令、模板、配置和字段示例归入 `backend/tools/lambo/`，不再占用根目录。
+- CLI 安装：从仓库根目录执行 `go -C backend/tools/lambo install ./cmd/lambo`；模块移动需同步修正新建项目、升级、扫描与文档路径。
+- 本地验证产物放在 `backend/tools/lambo/.artifacts/`，IDE 配置归入对应子项目，不提交这些本地文件。
 - 对外命令统一为 `lambo`，保留许可证和来源中的原作者信息。
 - 字段 JSON 是当前开发期生成契约，尚不代表字典后台与枚举发布真源已经确定。
 - 修改模板时，以实际生成产物进行 Go 构建、前端类型检查与构建，并验证冲突拒绝、重复生成和路径边界；不要只检查模板文本。

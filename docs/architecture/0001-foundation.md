@@ -34,8 +34,14 @@ Vben 页面通过 API 客户端访问 Go REST 接口；请求由 handler 进入 
 
 ## Lambo CLI 与首套业务 UI
 
-业务 UI 已由用户确定为 Vben Element Plus（`frontend/apps/web-ele`），其他上游应用暂保留。根 Go 模块承载 `lambo` CLI，后端独立为 `github.com/Edward-Jackie/lambo/backend`，工具依赖不进入业务运行服务。
+业务 UI 已由用户确定为 Vben Element Plus（`frontend/apps/web-ele`），其他上游应用暂保留。`backend/tools/lambo/` 的独立 Go 模块承载 `lambo` CLI，后端独立为 `github.com/Edward-Jackie/lambo/backend`，工具依赖不进入业务运行服务。
 
 CLI 以 Nunu CLI 为起点，保留进程组退出与文件热重载实现，Wire 工具固定为 `v0.7.0`，适配单仓库默认定位后端；`new` 只使用 Lambo 前后端模板，不再列出其他框架布局。新增的前端生成器复用 Vben 的请求、表单、表格与弹窗，不引入第二套基础设施。
 
 当前字段 JSON 仅是可重复生成的本地输入契约，未决定未来字典/枚举后台的真源。先交付一次生成后可修改的起始代码，内容不同则整批停止；在出现持续字段更新需求后再评估可合并的生成区，不提前引入 AST 重写或强制覆盖。
+
+## 一级目录归属
+
+一级业务目录固定为 `backend/`、`docs/`、`frontend/`、`deploy/` 和 `.skills/`。CLI 模块、内嵌模板、工具配置及字段示例整体放入 `backend/tools/lambo/`，模块路径为 `github.com/Edward-Jackie/lambo/backend/tools/lambo`；Go 服务仍保留原模块路径和依赖。根目录不再是 Go 模块，README、工程约定、许可证和计划等入口文件保留。
+
+CLI 的后端扫描和热重载排除 `tools/`，项目新建分别替换业务和工具模块，并在递归改名时跳过嵌套模块，避免把 CLI 当成业务服务或覆盖其模块定义。目录调整不改变生成页面的位置、字段协议或业务接口契约。

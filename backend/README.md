@@ -6,9 +6,9 @@
 
 ```bash
 # 在仓库根目录执行
-go install ./cmd/lambo
-lambo create backend category --schema examples/category.json
-lambo create all category --schema examples/category.json
+go -C backend/tools/lambo install ./cmd/lambo
+lambo create backend category --schema backend/tools/lambo/examples/category.json
+lambo create all category --schema backend/tools/lambo/examples/category.json
 lambo wire
 lambo run
 ```

@@ -2,7 +2,7 @@
 
 ## 命令与产物
 
-在根目录 `go install ./cmd/lambo` 后，命令可从项目根目录或任意子目录使用；`--root` 可显式指定另一个 Lambo 项目。字段文件路径和自定义模板路径相对当前工作目录解析。
+在根目录 `go -C backend/tools/lambo install ./cmd/lambo` 后，命令可从项目根目录或任意子目录使用；`--root` 可显式指定另一个 Lambo 项目。字段文件路径和自定义模板路径相对当前工作目录解析。
 
 | 命令 | 产物 |
 | --- | --- |
@@ -18,7 +18,7 @@
 
 ## 开发期字段定义
 
-完整示例见 [category.json](../examples/category.json)。这是当前 CLI 的本地输入契约，不代表已经决定字典后台或业务枚举的唯一真源。
+完整示例见 [category.json](../backend/tools/lambo/examples/category.json)。这是当前 CLI 的本地输入契约，不代表已经决定字典后台或业务枚举的唯一真源。
 
 | 属性 | 说明 |
 | --- | --- |
@@ -57,13 +57,13 @@
 
 ## 模板与更新策略
 
-模板内嵌于 CLI，无需联网生成。`tpl/create/*.tpl` 是后端模板，`tpl/frontend/*.tpl` 是前端模板。使用 `--tpl-path` 时保留这两个子目录，可只提供需要替换的文件，其余回落到内嵌模板。
+模板内嵌于 CLI，无需联网生成。`backend/tools/lambo/tpl/create/*.tpl` 是后端模板，`backend/tools/lambo/tpl/frontend/*.tpl` 是前端模板。使用 `--tpl-path` 时保留这两个子目录，可只提供需要替换的文件，其余回落到内嵌模板。
 
 生成器先渲染并检查整批文件，内容一致则跳过，有冲突则整批停止；新文件以独占创建方式写入，写入失败撤销本批新文件。拒绝经过符号链接的目标路径。当前不尝试自动合并手写区，也不提供 `--force`：修改后的代码（含自动格式化）需要人工合并，缺少或不同的产物会让 `--check` 失败。
 
 ## 新建、运行与 Wire
 
-- `lambo new shop --module github.com/example/shop`：从 Lambo 公共仓库克隆前后端，替换 CLI 和后端模块；拒绝已有目录，不自动装依赖、初始化新 Git 历史或启动服务。`-r` 可以指定本地或其他 Lambo 模板仓库；目标必须包含前端及两个 Go 模块。
+- `lambo new shop --module github.com/example/shop`：从 Lambo 公共仓库克隆前后端，替换 CLI 和后端模块；拒绝已有目录，不自动装依赖、初始化新 Git 历史或启动服务。`-r` 可以指定本地或其他 Lambo 模板仓库；目标必须包含前端、`backend/go.mod` 和 `backend/tools/lambo/go.mod`。
 - `lambo run`：默认在 `backend/` 发现主程序，监控后端文件；例如 `lambo run backend/cmd/server -- -conf config/local.yml`。可使用 `--excludeDir`、`--includeExt`、`--buildFlags`。自动重载时先退出旧进程组，再启动新进程。
 - `lambo wire` / `lambo wire all`：默认只扫描后端，以固定 Wire `v0.7.0` 生成，不依赖全局工具版本。
 - `lambo upgrade`：更新 Lambo CLI，不升级业务项目或后端依赖；新增 CLI 源码发布到远端后，此命令才可获取。
