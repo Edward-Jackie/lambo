@@ -1,0 +1,24 @@
+# 本地环境与凭据
+.env
+.env.local
+.env.*.local
+!.env.example
+*.pem
+*.key
+
+# 构建、依赖与运行产物
+node_modules/
+.pnpm-store/
+dist/
+coverage/
+*.log
+backend/bin/
+backend/storage/
+
+# 设备与编辑器状态
+.DS_Store
+.idea/
+
+# 本地验证与临时产物
+.artifacts/
+.tmp/
