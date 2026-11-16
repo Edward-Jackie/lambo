@@ -27,6 +27,8 @@ lambo run
 
 所有初始化项也支持环境变量：`LAMBO_AUTO_MIGRATE`、`LAMBO_BOOTSTRAP_ENABLED`、`LAMBO_ADMIN_USERNAME`、`LAMBO_ADMIN_PASSWORD`、`LAMBO_READER_USERNAME`、`LAMBO_READER_PASSWORD`。例如按需在 `backend/` 执行 `APP_CONF=/绝对路径/私有配置.json go run ./cmd/server`；程序会在连接、迁移、账号初始化和路由装配成功后报告就绪。
 
+角色与菜单骨架的初始化数据在 `internal/system/repository/seed/iam.sql`，由程序嵌入并在首次初始化时执行一次；按钮由权限目录派生，管理员密码来自 bootstrap 配置。手工部署时可直接将该脚本作为初始化数据参考。
+
 账号密码使用 bcrypt；随机访问令牌有效期 8 小时，数据库只保存 SHA-256 摘要，退出登录立即撤销。每次请求检查会话有效期与账号启用状态。用户支持多个角色，角色配置目录、页面和按钮权限，权限取并集；菜单及其上级停用后不再授权。权限分配读取数据库，接口权限码常量只声明所需权限。前端按钮和后端路由使用同一组权限码。
 
 | 接口 | 用途 |

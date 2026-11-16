@@ -2,13 +2,18 @@ package repository
 
 import (
 	"context"
+	_ "embed"
+	"fmt"
 	"strings"
 
 	"github.com/Edward-Jackie/lambo/backend/internal/system/model"
 	"gorm.io/gorm"
 )
 
-// InitializeIAM 只迁移一次旧角色与初始授权，不在后续启动时恢复人工撤销的权限。
+//go:embed seed/iam.sql
+var iamSeedSQL string
+
+// InitializeIAM 只初始化一次基础角色与菜单，不在后续启动时恢复人工撤销的权限。
 func (r *AuthRepository) InitializeIAM(ctx context.Context) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if err := tx.Exec("SELECT pg_advisory_xact_lock(?)", iamWriteLock).Error; err != nil {
@@ -28,56 +33,54 @@ func (r *AuthRepository) InitializeIAM(ctx context.Context) error {
 		if len(accounts) == 0 {
 			return iamInvalid("首次初始化权限需要先配置 bootstrap 管理账号")
 		}
-		admin := model.SystemRole{Code: model.RoleAdmin, Name: "管理员", Enabled: true}
-		reader := model.SystemRole{Code: model.RoleReader, Name: "只读用户", Enabled: true}
-		if err := tx.Create(&admin).Error; err != nil {
+		if err := execSeedSQL(tx, iamSeedSQL); err != nil {
 			return err
 		}
-		if err := tx.Create(&reader).Error; err != nil {
+		var roles []model.SystemRole
+		if err := tx.Find(&roles).Error; err != nil {
 			return err
 		}
-		str := func(s string) *string { return &s }
-		system := model.SystemMenu{Name: "系统管理", Kind: model.MenuDirectory, RouteName: str("SystemManagement"), Path: str("/business/system"), Icon: str("lucide:settings"), Sort: 20, Enabled: true}
-		if err := tx.Create(&system).Error; err != nil {
+		roleIDs := map[string]uint64{}
+		for _, role := range roles {
+			roleIDs[role.Code] = role.ID
+		}
+		adminID, readerID := roleIDs[model.RoleAdmin], roleIDs[model.RoleReader]
+		if adminID == 0 || readerID == 0 {
+			return iamInvalid("初始化数据缺少管理员或只读角色")
+		}
+		// 按钮由页面权限前缀从权限目录派生，菜单骨架与权限码只维护一份。
+		var pages []model.SystemMenu
+		if err := tx.Where(&model.SystemMenu{Kind: model.MenuPage}).Order("id").Find(&pages).Error; err != nil {
 			return err
 		}
-		all := []uint64{system.ID}
-		readerIDs := []uint64{}
-		for index, entry := range []struct{ name, prefix, component, path, route, icon string }{
-			{"分类管理", "catalog:category", "/business/category/index", "/business/category", "BusinessCategory", "lucide:folder"},
-			{"用户管理", "system:user", "/business/system-user/index", "/business/system-user", "BusinessSystemUser", "lucide:users"},
-			{"角色管理", "system:role", "/business/system-role/index", "/business/system-role", "BusinessSystemRole", "lucide:shield"},
-			{"菜单管理", "system:menu", "/business/system-menu/index", "/business/system-menu", "BusinessSystemMenu", "lucide:menu"},
-		} {
-			parent := float64(system.ID)
-			if index == 0 {
-				parent = 0
-			}
-			page := model.SystemMenu{Name: entry.name, Kind: model.MenuPage, ParentId: parent, RouteName: str(entry.route), Path: str(entry.path), Component: str(entry.component), Permission: str(entry.prefix + ":query"), Icon: str(entry.icon), Sort: float64(index), Enabled: true}
-			if err := tx.Create(&page).Error; err != nil {
-				return err
-			}
-			all = append(all, page.ID)
-			if index == 0 {
-				readerIDs = append(readerIDs, page.ID)
-			}
+		for _, page := range pages {
+			prefix := strings.TrimSuffix(textValue(page.Permission), ":query")
 			for code, label := range model.PermissionCatalog() {
-				if strings.HasPrefix(code, entry.prefix+":") && !strings.HasSuffix(code, ":query") {
-					button := model.SystemMenu{Name: label, Kind: model.MenuButton, ParentId: float64(page.ID), Permission: str(code), Enabled: true}
-					if err := tx.Create(&button).Error; err != nil {
-						return err
-					}
-					all = append(all, button.ID)
+				if !strings.HasPrefix(code, prefix+":") || strings.HasSuffix(code, ":query") {
+					continue
+				}
+				permission := code
+				button := model.SystemMenu{Name: label, Kind: model.MenuButton, ParentId: float64(page.ID), Permission: &permission, Enabled: true}
+				if err := tx.Create(&button).Error; err != nil {
+					return err
 				}
 			}
 		}
-		for _, id := range all {
-			if err := tx.Create(&model.RoleMenu{RoleID: admin.ID, MenuID: id}).Error; err != nil {
+		var menus []model.SystemMenu
+		if err := tx.Find(&menus).Error; err != nil {
+			return err
+		}
+		for _, menu := range menus {
+			if err := tx.Create(&model.RoleMenu{RoleID: adminID, MenuID: menu.ID}).Error; err != nil {
 				return err
 			}
 		}
-		for _, id := range readerIDs {
-			if err := tx.Create(&model.RoleMenu{RoleID: reader.ID, MenuID: id}).Error; err != nil {
+		for _, page := range pages {
+			// 不挂在系统管理下的页面是业务页面，只读角色默认可查询。
+			if uint64(page.ParentId) != 0 {
+				continue
+			}
+			if err := tx.Create(&model.RoleMenu{RoleID: readerID, MenuID: page.ID}).Error; err != nil {
 				return err
 			}
 		}
@@ -85,9 +88,9 @@ func (r *AuthRepository) InitializeIAM(ctx context.Context) error {
 			var rid uint64
 			switch a.Role {
 			case model.RoleAdmin:
-				rid = admin.ID
+				rid = adminID
 			case model.RoleReader:
-				rid = reader.ID
+				rid = readerID
 			}
 			if rid != 0 {
 				if err := tx.Create(&model.AccountRole{AccountID: a.ID, RoleID: rid}).Error; err != nil {
@@ -103,6 +106,33 @@ func (r *AuthRepository) InitializeIAM(ctx context.Context) error {
 		}
 		return tx.Create(&model.IAMMigration{Key: "rbac-v1"}).Error
 	})
+}
+
+// execSeedSQL 逐条执行初始化脚本，跳过空行与注释。
+func execSeedSQL(tx *gorm.DB, script string) error {
+	for _, statement := range splitSQL(script) {
+		if err := tx.Exec(statement).Error; err != nil {
+			return fmt.Errorf("执行初始化脚本：%w", err)
+		}
+	}
+	return nil
+}
+
+// splitSQL 按分号拆分语句，丢弃注释与空行。
+func splitSQL(script string) []string {
+	statements := make([]string, 0, 4)
+	for _, statement := range strings.Split(script, ";") {
+		lines := make([]string, 0, 8)
+		for _, line := range strings.Split(statement, "\n") {
+			if trimmed := strings.TrimSpace(line); trimmed != "" && !strings.HasPrefix(trimmed, "--") {
+				lines = append(lines, line)
+			}
+		}
+		if len(lines) > 0 {
+			statements = append(statements, strings.Join(lines, "\n"))
+		}
+	}
+	return statements
 }
 
 func (r *AuthRepository) ManagementOptions(ctx context.Context) (map[string]interface{}, error) {

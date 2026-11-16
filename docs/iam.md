@@ -18,6 +18,14 @@
 
 输入为 `tools/lambo/examples/system-{user,role,menu}.json`。依次执行 `lambo create all <名称> --schema <文件>`，得到三个模块共 27 个前后端基线文件。基础字段、校验、列表、详情、表单及 HTTP 契约复用生成结果；多对多关系、授权树、密码动作、树形菜单和鉴权在基线上扩展。初始产物副本保存于本地 `.artifacts/iam/generated/`，业务扩展后再次生成应报告差异，不覆盖修改。
 
+## 初始化数据
+
+稳定数据放在 `backend/internal/system/repository/seed/iam.sql`，由 `InitializeIAM` 在首次启动时嵌入执行，整体包在一个事务里并持有 advisory lock，只跑一次（`rbac-v1` 标记），不会在后续启动恢复人工撤销的授权。
+
+脚本只写角色和菜单骨架（目录、页面），使用固定 ID 建立父子关系。按钮不写进 SQL，由页面权限前缀从 `PermissionCatalog` 派生成，避免菜单与权限码两处维护；管理员密码依赖运行时哈希，也不进 SQL。只读角色默认获得不挂在系统管理下的业务页面查询权限，系统管理页面不授予。
+
+`TestSeedSQLSplitsStatementsAndMatchesPermissionCatalog` 检查脚本可被正确拆分，且其中的页面权限码都存在于权限目录。新增系统模块时需要同步更新这份 SQL 与 `PermissionCatalog`。
+
 ## 验收
 
 页面创建菜单、角色、用户，分配多个角色并登录核对菜单/按钮；新增与修改授权后重新登录验证生效；直接调用未授权接口返回 403。覆盖密码重置、停用、撤权、删除约束、最后一个管理员保护和多角色合并，完成构建、类型检查与真实 PostgreSQL 联调。部门、岗位、数据范围及生产部署不在本轮范围。

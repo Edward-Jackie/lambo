@@ -1,8 +1,10 @@
 package repository
 
 import (
-	"github.com/Edward-Jackie/lambo/backend/internal/system/model"
+	"strings"
 	"testing"
+
+	"github.com/Edward-Jackie/lambo/backend/internal/system/model"
 )
 
 func TestActiveMenusRejectDisabledAncestorsAndCycles(t *testing.T) {
@@ -34,5 +36,27 @@ func TestIAMRelationIDsRejectUnsafeAndDuplicateValues(t *testing.T) {
 	}
 	if ids, err := uniqueIDs([]uint64{1, 2}); err != nil || len(ids) != 2 {
 		t.Fatal("合法多角色关联应保留")
+	}
+}
+
+func TestSeedSQLSplitsStatementsAndMatchesPermissionCatalog(t *testing.T) {
+	statements := splitSQL(iamSeedSQL)
+	if len(statements) != 2 {
+		t.Fatalf("初始化脚本应为角色与菜单两条语句，实际 %d 条", len(statements))
+	}
+	for _, statement := range statements {
+		if strings.HasPrefix(statement, "--") || !strings.HasPrefix(strings.ToUpper(statement), "INSERT INTO") {
+			t.Fatalf("初始化语句应去掉注释且为 INSERT：%s", statement)
+		}
+	}
+	// 脚本里的页面权限码必须存在于权限目录，避免菜单引用了不存在的权限。
+	catalog := model.PermissionCatalog()
+	for _, page := range []string{"catalog:category:query", "system:user:query", "system:role:query", "system:menu:query"} {
+		if !strings.Contains(iamSeedSQL, page) {
+			t.Fatalf("初始化菜单缺少页面权限 %s", page)
+		}
+		if _, ok := catalog[page]; !ok {
+			t.Fatalf("初始化菜单引用了权限目录中不存在的 %s", page)
+		}
 	}
 }

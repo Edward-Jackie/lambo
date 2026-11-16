@@ -43,7 +43,8 @@
 - 路由挂载、数据库迁移清单与 Wire 装配只出现在 `cmd/server/wire/`。`platform/httpserver` 只提供引擎、CORS 与 `/healthz`；`platform/database` 只提供连接和通用迁移，表清单由装配层传入。
 - 系统表的模型、事务与安全不变式（最后一个管理员保护、越权拒绝、会话撤销）留在 `system/`；`business/` 不得复制这些规则，也不得绕过 `system` 的 service 直接写系统表。
 - 生成位置由字段 JSON 的 `domain` 决定：`business`（默认）写 `internal/business/<层>/`，`system` 写 `internal/system/<层>/`。调整目录必须同步修改 `tools/lambo/internal/command/create/files.go` 与 `tpl/create/*.tpl` 的 import，否则下次生成会写回旧路径。
-- 已知待解耦项：`system/model/iam.go` 的 `PermissionCatalog`、`PageComponents` 与 `system/repository/iam_seed.go` 仍硬编码 `catalog:category` 权限码和"分类管理"菜单。目标是由业务模块注册权限与菜单种子，系统区不出现业务标识。
+- 已知待解耦项：`system/model/iam.go` 的 `PermissionCatalog`、`PageComponents` 与 `system/repository/iam_seed.go` 对 `catalog:category` 的引用仍在系统区。目标是由业务模块注册权限与菜单种子，系统区不出现业务标识。
+- 初始化数据只放稳定部分（角色、菜单骨架），写在 `system/repository/seed/*.sql` 并以 embed 执行；按钮从权限目录派生、账号密码依赖运行时哈希，都不进 SQL。新增系统模块须同步 SQL 与 `PermissionCatalog`。
 
 ## Docker 部署
 
