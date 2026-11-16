@@ -60,11 +60,17 @@ func runCreate(cmd *cobra.Command, kind, name string) error {
 	if err != nil {
 		return err
 	}
+	if err := checkGoConflicts(root, files); err != nil {
+		return err
+	}
 	if err := publishFiles(root, files, dryRun, checkOnly, cmd.OutOrStdout()); err != nil {
 		return err
 	}
 	if !dryRun && !checkOnly {
-		fmt.Fprintln(cmd.OutOrStdout(), "生成完成。已有手写文件不会覆盖；后端组件需接入 Wire、路由和真实业务实现。")
+		fmt.Fprintln(cmd.OutOrStdout(), "生成完成。已有手写文件不会覆盖。")
+		if kind == "backend" || kind == "all" {
+			fmt.Fprintf(cmd.OutOrStdout(), "后端：注入已连接的 GORM 数据库并迁移 model.%s；装配后调用 %sHandler.RegisterRoutes(router, authorize) 注册 CRUD 与权限检查。\n", spec.StructName(), spec.LowerName())
+		}
 		if kind == "frontend" || kind == "all" {
 			fmt.Fprintf(cmd.OutOrStdout(), "前端路由：/business/%s；接口契约：%s。请配置相应权限码并联调真实后端。\n", spec.Name, spec.API)
 		}

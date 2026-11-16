@@ -10,6 +10,7 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"unicode/utf16"
 
 	"github.com/duke-git/lancet/v2/strutil"
 )
@@ -51,6 +52,9 @@ var fieldPattern = regexp.MustCompile(`^[a-z][a-zA-Z0-9]*$`)
 var apiPattern = regexp.MustCompile(`^/[a-zA-Z0-9_-]+(?:/[a-zA-Z0-9_-]+)*$`)
 var permissionPattern = regexp.MustCompile(`^[a-z][a-z0-9:_-]*$`)
 
+// stringLength 与前端字符串校验统一按 UTF-16 代码单元计数。
+func stringLength(value string) int { return len(utf16.Encode([]rune(value))) }
+
 func loadSpec(name, path string) (Spec, error) {
 	spec := Spec{Name: name, Title: name, API: "/api/" + name, Permission: "business:" + name, IDType: "number"}
 	if !namePattern.MatchString(name) {
@@ -86,7 +90,7 @@ func loadSpec(name, path string) (Spec, error) {
 	if len(spec.Fields) == 0 {
 		return spec, fmt.Errorf("至少需要一个业务字段")
 	}
-	names, goNames := map[string]bool{"id": true, "constructor": true, "prototype": true}, map[string]bool{"ID": true, "Id": true, "CreatedAt": true, "UpdatedAt": true, "DeletedAt": true, "TableName": true}
+	names, goNames := map[string]bool{"id": true, "constructor": true, "prototype": true}, map[string]bool{"ID": true, "Id": true, "CreatedAt": true, "UpdatedAt": true, "DeletedAt": true, "TableName": true, "Validate": true, "ApplyDefaults": true}
 	editable := 0
 	for i := range spec.Fields {
 		field := &spec.Fields[i]
@@ -116,13 +120,18 @@ func loadSpec(name, path string) (Spec, error) {
 				return spec, fmt.Errorf("字段 %s 的选项标签、类型或值唯一性无效", field.Name)
 			}
 			values[key] = true
+			if value, ok := option.Value.(string); ok {
+				if (field.Required && (value == "" || strings.TrimSpace(value) != value)) || (field.MaxLength > 0 && stringLength(value) > field.MaxLength) {
+					return spec, fmt.Errorf("字段 %s 的选项不符合必填或长度规则", field.Name)
+				}
+			}
 		}
 		if field.Default != nil {
 			if !field.accepts(field.Default) || (len(values) > 0 && !values[jsonValue(field.Default)]) {
 				return spec, fmt.Errorf("字段 %s 的默认值不符合字段类型或选项", field.Name)
 			}
-			if value, ok := field.Default.(string); ok && field.MaxLength > 0 && len([]rune(value)) > field.MaxLength {
-				return spec, fmt.Errorf("字段 %s 默认值超出最大长度", field.Name)
+			if value, ok := field.Default.(string); ok && ((field.Required && strings.TrimSpace(value) == "") || (field.MaxLength > 0 && stringLength(value) > field.MaxLength)) {
+				return spec, fmt.Errorf("字段 %s 默认值不符合必填或最大长度规则", field.Name)
 			}
 		}
 		if !field.ReadOnly {
@@ -138,6 +147,47 @@ func loadSpec(name, path string) (Spec, error) {
 func (s Spec) StructName() string { return strutil.UpperFirst(strutil.CamelCase(s.Name)) }
 func (s Spec) LowerName() string  { return strutil.LowerFirst(s.StructName()) }
 func (s Spec) SnakeName() string  { return strutil.SnakeCase(s.StructName()) }
+func (s Spec) IDGoType() string {
+	if s.IDType == "string" {
+		return "string"
+	}
+	return "uint64"
+}
+func (s Spec) UsesNumberValidation() bool {
+	for _, f := range s.Fields {
+		if f.Type == "number" && (!f.ReadOnly || f.Search) {
+			return true
+		}
+	}
+	return false
+}
+func (s Spec) UsesStringValidation() bool {
+	if s.IDType == "string" {
+		return true
+	}
+	for _, f := range s.Fields {
+		if f.Type == "string" && f.Required && (!f.ReadOnly || f.Search) {
+			return true
+		}
+	}
+	return false
+}
+func (s Spec) UsesStringLength() bool {
+	for _, f := range s.Fields {
+		if f.MaxLength > 0 && (!f.ReadOnly || f.Search) {
+			return true
+		}
+	}
+	return false
+}
+func (s Spec) UsesSubstringSearch() bool {
+	for _, f := range s.SearchFields() {
+		if f.Type == "string" && len(f.Options) == 0 {
+			return true
+		}
+	}
+	return false
+}
 func (s Spec) EditableFields() []Field {
 	fields := []Field{}
 	for _, field := range s.Fields {
@@ -156,8 +206,10 @@ func (s Spec) SearchFields() []Field {
 	}
 	return fields
 }
-func (f Field) Comment() string { return strings.Join(strings.Fields(f.Label), " ") }
-func (f Field) GoName() string  { return strutil.UpperFirst(f.Name) }
+func (f Field) Comment() string    { return strings.Join(strings.Fields(f.Label), " ") }
+func (f Field) GoName() string     { return strutil.UpperFirst(f.Name) }
+func (f Field) ColumnName() string { return strutil.SnakeCase(f.GoName()) }
+func (f Field) HasDefault() bool   { return f.Default != nil }
 func (f Field) GoType() string {
 	switch f.Type {
 	case "number":

@@ -74,7 +74,7 @@ const [Modal, modalApi] = useVbenModal<ModalData>({
       if (!valid) return;
       const values = await formApi.getValues();
       const payload: {{.StructName}}Api.Payload = {
-{{range .EditableFields}}        {{.Name}}: values.{{.Name}}{{if not .Required}} ?? undefined{{end}},
+{{range .EditableFields}}        {{.Name}}: {{if and (not .Required) (eq .Type "string")}}values.{{.Name}} === '' ? undefined : {{end}}values.{{.Name}}{{if not .Required}} ?? undefined{{end}},
 {{end}}      };
       if (mode.value === 'edit') {
         if (recordID.value === undefined) throw new Error('缺少记录 ID');

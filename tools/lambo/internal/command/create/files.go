@@ -48,6 +48,13 @@ func checkRouteName(root string, spec Spec) error {
 }
 
 func renderFiles(kind string, data templateData) ([]outputFile, error) {
+	if kind == "backend" || kind == "all" || kind == "service" {
+		for _, field := range data.Fields {
+			if field.ReadOnly && field.Required && !field.HasDefault() {
+				return nil, fmt.Errorf("只读必填字段 %s 需要显式默认值；计算字段请先接入手写创建逻辑", field.Name)
+			}
+		}
+	}
 	kinds := []string{kind}
 	if kind == "backend" || kind == "all" {
 		kinds = []string{"model", "repository", "service", "handler"}
