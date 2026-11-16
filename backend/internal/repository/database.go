@@ -43,7 +43,7 @@ func NewDb(conf *viper.Viper, logger *log.Logger) (*gorm.DB, func(), error) {
 		return nil, nil, fmt.Errorf("PostgreSQL 就绪检查失败：%w", err)
 	}
 	if conf.GetBool("data.auto_migrate") {
-		if err := db.WithContext(ctx).AutoMigrate(&model.Category{}, &model.Account{}, &model.Session{}); err != nil {
+		if err := db.WithContext(ctx).AutoMigrate(&model.Category{}, &model.Account{}, &model.SystemUser{}, &model.Session{}, &model.SystemRole{}, &model.SystemMenu{}, &model.AccountRole{}, &model.RoleMenu{}, &model.IAMMigration{}); err != nil {
 			cleanup()
 			return nil, nil, fmt.Errorf("初始化业务表失败：%w", err)
 		}

@@ -21,18 +21,27 @@ var RepositorySet = wire.NewSet(
 	repository.NewRepository,
 	repository.NewCategoryRepository,
 	repository.NewAuthRepository,
+	repository.NewSystemUserRepository,
+	repository.NewSystemRoleRepository,
+	repository.NewSystemMenuRepository,
 )
 
 var ServiceSet = wire.NewSet(
 	service.NewService,
 	service.NewCategoryService,
 	service.NewAuthService,
+	service.NewSystemUserService,
+	service.NewSystemRoleService,
+	service.NewSystemMenuService,
 )
 
 var HandlerSet = wire.NewSet(
 	handler.NewHandler,
 	handler.NewCategoryHandler,
 	handler.NewAuthHandler,
+	handler.NewSystemUserHandler,
+	handler.NewSystemRoleHandler,
+	handler.NewSystemMenuHandler,
 )
 
 func NewWire(*viper.Viper, *log.Logger) (*gin.Engine, func(), error) {

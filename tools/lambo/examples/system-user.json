@@ -1,0 +1,49 @@
+{
+  "name": "system-user",
+  "title": "用户管理",
+  "api": "/api/system/users",
+  "permission": "system:user",
+  "idType": "number",
+  "fields": [
+    {
+      "name": "username",
+      "label": "用户名",
+      "type": "string",
+      "required": true,
+      "search": true,
+      "maxLength": 64
+    },
+    {
+      "name": "realName",
+      "label": "姓名",
+      "type": "string",
+      "required": true,
+      "search": true,
+      "maxLength": 64
+    },
+    {
+      "name": "enabled",
+      "label": "状态",
+      "type": "boolean",
+      "required": true,
+      "search": true,
+      "default": true,
+      "options": [
+        {
+          "label": "启用",
+          "value": true
+        },
+        {
+          "label": "停用",
+          "value": false
+        }
+      ]
+    },
+    {
+      "name": "remark",
+      "label": "备注",
+      "type": "string",
+      "maxLength": 500
+    }
+  ]
+}

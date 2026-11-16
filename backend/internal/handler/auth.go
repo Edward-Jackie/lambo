@@ -32,6 +32,7 @@ func (h *AuthHandler) RegisterRoutes(router *gin.Engine) {
 	group.GET("/user/info", h.Info)
 	group.GET("/auth/codes", h.Codes)
 	group.GET("/menu/all", h.Menus)
+	group.GET("/system/options", h.Options)
 }
 
 func (h *AuthHandler) Login(ctx *gin.Context) {
@@ -70,6 +71,7 @@ func (h *AuthHandler) RequireSession() gin.HandlerFunc {
 			return
 		}
 		ctx.Set(accountContextKey, account)
+		ctx.Request = ctx.Request.WithContext(model.WithActor(ctx.Request.Context(), account.ID))
 		ctx.Next()
 	}
 }
@@ -80,8 +82,9 @@ func (h *AuthHandler) Authorize(ctx *gin.Context, code string) bool {
 	if account == nil {
 		return false
 	}
-	for _, granted := range accountCodes(account.Role) {
+	for _, granted := range account.Codes {
 		if granted == code {
+			ctx.Request = ctx.Request.WithContext(model.WithRequiredCode(ctx.Request.Context(), code))
 			return true
 		}
 	}
@@ -90,26 +93,53 @@ func (h *AuthHandler) Authorize(ctx *gin.Context, code string) bool {
 
 func (h *AuthHandler) Info(ctx *gin.Context) {
 	account := currentAccount(ctx)
+	roles := make([]string, 0)
+	for _, role := range account.Roles {
+		roles = append(roles, role.Code)
+	}
+	home := "/no-access"
+	for _, menu := range account.Menus {
+		if menu.Kind == model.MenuPage && menu.Path != nil {
+			home = *menu.Path
+			break
+		}
+	}
 	resp.HandleSuccess(ctx, gin.H{
 		"userId": strconv.FormatUint(account.ID, 10), "username": account.Username,
-		"realName": account.RealName, "roles": []string{account.Role}, "avatar": "",
-		"homePath": "/business/category", "desc": "Lambo 管理后台", "token": "",
+		"realName": account.RealName, "roles": roles, "avatar": "",
+		"homePath": home, "desc": "Lambo 管理后台", "token": "",
 	})
 }
 
 func (h *AuthHandler) Codes(ctx *gin.Context) {
-	resp.HandleSuccess(ctx, accountCodes(currentAccount(ctx).Role))
+	resp.HandleSuccess(ctx, currentAccount(ctx).Codes)
 }
 
 func (h *AuthHandler) Menus(ctx *gin.Context) {
-	menus := []gin.H{}
-	if h.Authorize(ctx, CategoryPermissionQuery) {
-		menus = append(menus, gin.H{
-			"name": "BusinessCategory", "path": "/business/category", "component": "/business/category/index",
-			"meta": gin.H{"title": "分类管理", "icon": "lucide:folder", "keepAlive": true},
-		})
+	var build func(float64) []gin.H
+	build = func(parent float64) []gin.H {
+		result := make([]gin.H, 0)
+		for _, m := range currentAccount(ctx).Menus {
+			if m.ParentId != parent || m.Kind == model.MenuButton {
+				continue
+			}
+			component := "BasicLayout"
+			if m.Component != nil {
+				component = *m.Component
+			}
+			item := gin.H{"name": m.RouteName, "path": m.Path, "component": component, "meta": gin.H{"title": m.Name, "icon": m.Icon, "keepAlive": true}}
+			if m.Kind == model.MenuDirectory {
+				children := build(float64(m.ID))
+				if len(children) == 0 {
+					continue
+				}
+				item["children"] = children
+			}
+			result = append(result, item)
+		}
+		return result
 	}
-	resp.HandleSuccess(ctx, menus)
+	resp.HandleSuccess(ctx, build(0))
 }
 
 func (h *AuthHandler) handleAuthError(ctx *gin.Context, err error) {
@@ -133,15 +163,4 @@ func bearerToken(ctx *gin.Context) string {
 		return ""
 	}
 	return parts[1]
-}
-
-func accountCodes(role string) []string {
-	switch role {
-	case model.RoleAdmin:
-		return []string{CategoryPermissionQuery, CategoryPermissionCreate, CategoryPermissionUpdate, CategoryPermissionDelete}
-	case model.RoleReader:
-		return []string{CategoryPermissionQuery}
-	default:
-		return []string{}
-	}
 }

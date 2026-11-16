@@ -37,7 +37,16 @@ func NewWire(viperViper *viper.Viper, logger *log.Logger) (*gin.Engine, func(), 
 	categoryRepository := repository.NewCategoryRepository(repositoryRepository)
 	categoryService := service.NewCategoryService(serviceService, categoryRepository)
 	categoryHandler := handler.NewCategoryHandler(handlerHandler, categoryService)
-	engine, err := server.NewServerHTTP(logger, authHandler, categoryHandler)
+	systemUserRepository := repository.NewSystemUserRepository(repositoryRepository)
+	systemUserService := service.NewSystemUserService(serviceService, systemUserRepository)
+	systemUserHandler := handler.NewSystemUserHandler(handlerHandler, systemUserService)
+	systemRoleRepository := repository.NewSystemRoleRepository(repositoryRepository)
+	systemRoleService := service.NewSystemRoleService(serviceService, systemRoleRepository)
+	systemRoleHandler := handler.NewSystemRoleHandler(handlerHandler, systemRoleService)
+	systemMenuRepository := repository.NewSystemMenuRepository(repositoryRepository)
+	systemMenuService := service.NewSystemMenuService(serviceService, systemMenuRepository)
+	systemMenuHandler := handler.NewSystemMenuHandler(handlerHandler, systemMenuService)
+	engine, err := server.NewServerHTTP(logger, authHandler, categoryHandler, systemUserHandler, systemRoleHandler, systemMenuHandler)
 	if err != nil {
 		cleanup()
 		return nil, nil, err
@@ -51,8 +60,8 @@ func NewWire(viperViper *viper.Viper, logger *log.Logger) (*gin.Engine, func(), 
 
 var ServerSet = wire.NewSet(server.NewServerHTTP)
 
-var RepositorySet = wire.NewSet(repository.NewDb, repository.NewRepository, repository.NewCategoryRepository, repository.NewAuthRepository)
+var RepositorySet = wire.NewSet(repository.NewDb, repository.NewRepository, repository.NewCategoryRepository, repository.NewAuthRepository, repository.NewSystemUserRepository, repository.NewSystemRoleRepository, repository.NewSystemMenuRepository)
 
-var ServiceSet = wire.NewSet(service.NewService, service.NewCategoryService, service.NewAuthService)
+var ServiceSet = wire.NewSet(service.NewService, service.NewCategoryService, service.NewAuthService, service.NewSystemUserService, service.NewSystemRoleService, service.NewSystemMenuService)
 
-var HandlerSet = wire.NewSet(handler.NewHandler, handler.NewCategoryHandler, handler.NewAuthHandler)
+var HandlerSet = wire.NewSet(handler.NewHandler, handler.NewCategoryHandler, handler.NewAuthHandler, handler.NewSystemUserHandler, handler.NewSystemRoleHandler, handler.NewSystemMenuHandler)

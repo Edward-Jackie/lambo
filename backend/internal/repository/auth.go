@@ -38,6 +38,9 @@ func (r *AuthRepository) SessionAccount(ctx context.Context, tokenHash string) (
 		Joins("JOIN lambo_sessions ON lambo_sessions.account_id = lambo_accounts.id").
 		Where("lambo_sessions.token_hash = ? AND lambo_sessions.expires_at > ? AND lambo_accounts.enabled = ?", tokenHash, time.Now().UTC(), true).
 		Take(&account).Error
+	if err == nil {
+		err = loadAccess(r.db.WithContext(ctx), &account)
+	}
 	return &account, err
 }
 

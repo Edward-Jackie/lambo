@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"github.com/Edward-Jackie/lambo/backend/internal/model"
 
 	"github.com/Edward-Jackie/lambo/backend/internal/handler"
 	"github.com/Edward-Jackie/lambo/backend/internal/middleware"
@@ -14,8 +15,11 @@ func NewServerHTTP(
 	logger *log.Logger,
 	authHandler *handler.AuthHandler,
 	categoryHandler *handler.CategoryHandler,
+	userHandler *handler.SystemUserHandler,
+	roleHandler *handler.SystemRoleHandler,
+	menuHandler *handler.SystemMenuHandler,
 ) (*gin.Engine, error) {
-	if logger == nil || authHandler == nil || categoryHandler == nil {
+	if logger == nil || authHandler == nil || categoryHandler == nil || userHandler == nil || roleHandler == nil || menuHandler == nil {
 		return nil, fmt.Errorf("HTTP 服务缺少认证或分类依赖")
 	}
 	r := newBaseHTTPServer()
@@ -23,6 +27,13 @@ func NewServerHTTP(
 	if err := categoryHandler.RegisterRoutes(r.Group("", authHandler.RequireSession()), authHandler.Authorize); err != nil {
 		return nil, err
 	}
+	group := r.Group("", authHandler.RequireSession())
+	for _, register := range []func() error{func() error { return userHandler.RegisterRoutes(group, authHandler.Authorize) }, func() error { return roleHandler.RegisterRoutes(group, authHandler.Authorize) }, func() error { return menuHandler.RegisterRoutes(group, authHandler.Authorize) }} {
+		if err := register(); err != nil {
+			return nil, err
+		}
+	}
+	group.POST("/api/system/users/:id/password", authHandler.RequireCode(model.PermissionUserPassword), userHandler.ResetPassword)
 	return r, nil
 }
 

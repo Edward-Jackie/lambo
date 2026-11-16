@@ -60,6 +60,13 @@ func NewAuthService(repo *repository.AuthRepository, conf *viper.Viper) (*AuthSe
 			}
 		}
 	}
+	if conf.GetBool("data.auto_migrate") || conf.GetBool("bootstrap.enabled") {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		if err := repo.InitializeIAM(ctx); err != nil {
+			return nil, err
+		}
+	}
 	return svc, nil
 }
 
@@ -111,4 +118,8 @@ func (s *AuthService) Logout(ctx context.Context, token string) error {
 func hashToken(token string) string {
 	sum := sha256.Sum256([]byte(token))
 	return hex.EncodeToString(sum[:])
+}
+
+func (s *AuthService) ManagementOptions(ctx context.Context) (map[string]interface{}, error) {
+	return s.repository.ManagementOptions(ctx)
 }

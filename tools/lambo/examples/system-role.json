@@ -1,0 +1,49 @@
+{
+  "name": "system-role",
+  "title": "角色管理",
+  "api": "/api/system/roles",
+  "permission": "system:role",
+  "idType": "number",
+  "fields": [
+    {
+      "name": "code",
+      "label": "角色编码",
+      "type": "string",
+      "required": true,
+      "search": true,
+      "maxLength": 64
+    },
+    {
+      "name": "name",
+      "label": "角色名称",
+      "type": "string",
+      "required": true,
+      "search": true,
+      "maxLength": 64
+    },
+    {
+      "name": "enabled",
+      "label": "状态",
+      "type": "boolean",
+      "required": true,
+      "search": true,
+      "default": true,
+      "options": [
+        {
+          "label": "启用",
+          "value": true
+        },
+        {
+          "label": "停用",
+          "value": false
+        }
+      ]
+    },
+    {
+      "name": "remark",
+      "label": "备注",
+      "type": "string",
+      "maxLength": 500
+    }
+  ]
+}

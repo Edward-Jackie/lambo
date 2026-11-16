@@ -36,7 +36,14 @@ const coreRoutes: RouteRecordRaw[] = [
     name: 'Root',
     path: '/',
     redirect: preferences.app.defaultHomePath,
-    children: [],
+    children: [
+      {
+        name: 'NoAccess',
+        path: '/no-access',
+        component: () => import('#/views/_core/fallback/forbidden.vue'),
+        meta: { title: '暂无访问权限', hideInMenu: true, hideInTab: true },
+      },
+    ],
   },
   {
     component: AuthPageLayout,

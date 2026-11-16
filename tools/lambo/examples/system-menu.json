@@ -1,0 +1,100 @@
+{
+  "name": "system-menu",
+  "title": "菜单管理",
+  "api": "/api/system/menus",
+  "permission": "system:menu",
+  "idType": "number",
+  "fields": [
+    {
+      "name": "name",
+      "label": "菜单名称",
+      "type": "string",
+      "required": true,
+      "search": true,
+      "maxLength": 64
+    },
+    {
+      "name": "kind",
+      "label": "类型",
+      "type": "string",
+      "required": true,
+      "search": true,
+      "options": [
+        {
+          "label": "目录",
+          "value": "directory"
+        },
+        {
+          "label": "页面",
+          "value": "page"
+        },
+        {
+          "label": "按钮",
+          "value": "button"
+        }
+      ]
+    },
+    {
+      "name": "parentId",
+      "label": "上级菜单",
+      "type": "number",
+      "required": true,
+      "default": 0
+    },
+    {
+      "name": "routeName",
+      "label": "路由名称",
+      "type": "string",
+      "maxLength": 64
+    },
+    {
+      "name": "path",
+      "label": "路由路径",
+      "type": "string",
+      "maxLength": 128
+    },
+    {
+      "name": "component",
+      "label": "页面组件",
+      "type": "string",
+      "maxLength": 128
+    },
+    {
+      "name": "permission",
+      "label": "权限码",
+      "type": "string",
+      "maxLength": 96
+    },
+    {
+      "name": "icon",
+      "label": "图标",
+      "type": "string",
+      "maxLength": 64
+    },
+    {
+      "name": "sort",
+      "label": "排序",
+      "type": "number",
+      "required": true,
+      "default": 0
+    },
+    {
+      "name": "enabled",
+      "label": "状态",
+      "type": "boolean",
+      "required": true,
+      "search": true,
+      "default": true,
+      "options": [
+        {
+          "label": "启用",
+          "value": true
+        },
+        {
+          "label": "停用",
+          "value": false
+        }
+      ]
+    }
+  ]
+}

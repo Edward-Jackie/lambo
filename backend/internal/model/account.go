@@ -14,10 +14,13 @@ type Account struct {
 	Username     string `gorm:"size:64;not null;uniqueIndex"`
 	PasswordHash string `gorm:"size:100;not null" json:"-"`
 	RealName     string `gorm:"size:64;not null"`
-	Role         string `gorm:"size:32;not null"`
+	Role         string `gorm:"size:32;not null;default:''" json:"-"`
 	Enabled      bool   `gorm:"not null"`
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
+	Roles        []SystemRole `gorm:"-" json:"-"`
+	Codes        []string     `gorm:"-" json:"-"`
+	Menus        []SystemMenu `gorm:"-" json:"-"`
 }
 
 func (*Account) TableName() string { return "lambo_accounts" }
