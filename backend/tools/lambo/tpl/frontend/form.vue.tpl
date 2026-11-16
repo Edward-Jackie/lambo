@@ -44,7 +44,8 @@ const [Modal, modalApi] = useVbenModal<ModalData>({
     loadError.value = false;
     modalApi.setState({ loading: true, confirmDisabled: true });
     try {
-      await formApi.resetForm();
+      // 详情模式不渲染编辑表单，不能等待它挂载后再加载记录。
+      if (mode.value !== 'detail') await formApi.reset();
       if (sequence !== requestSequence) return;
       if (mode.value !== 'create') {
         if (recordID.value === undefined) throw new Error('缺少记录 ID');
