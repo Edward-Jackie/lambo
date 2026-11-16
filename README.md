@@ -2,7 +2,7 @@
 
 基于 Vben Admin + Gin/GORM 的 Go / Vue 业务脚手架，后端从 Nunu Basic 演进。对外开发工具统一使用 **`lambo`**。
 
-**当前能力：** CLI 新建项目、后端分层组件生成、Vben Element Plus 前端代码生成、后端热重载、Wire 生成与工具升级。认证、权限后台、字典后台、真实数据库初始化和业务状态流转仍按 [plan.md](plan.md) 开发，尚未完成前后端联调。
+**当前能力：** CLI 新建项目、后端 CRUD 生成、Vben Element Plus 前端代码生成、后端热重载、Wire 生成与工具升级。生成的前后端 API 已验证普通 CRUD；认证、权限后台、字典后台、业务主数据库初始化和业务状态流转仍按 [plan.md](plan.md) 开发。
 
 ## 安装本地命令
 
@@ -53,7 +53,7 @@ lambo new shop --module github.com/example/shop
 lambo upgrade
 ```
 
-`create backend` 生成四层起始组件；`create all` 在此基础上增加前端产物。后端组件需补齐真实业务并注册 Wire/路由；未实现的接口明确返回错误，不伪装成可用 CRUD。前端生成器只生成代码，不会自动创建数据库、权限记录或 HTTP 接口。
+`create backend` 生成模型与校验类型、GORM 仓储、服务和五个 CRUD 接口；`create all` 在此基础上增加前端产物。注入数据库、迁移表并调用生成处理器的 `RegisterRoutes(router, authorize)`，即可显式接入现有应用。请求与响应和前端 API 对齐，支持分页筛选、零值更新、可选字段清空、只读字段保护及权限拒绝；装配示例见[生成器说明](docs/generator.md)。具体业务规则和按身份的数据范围由业务模块补充。
 
 `run` 默认定位 `backend/`，支持文件热重载及 `--` 后透传应用参数。`wire` 使用固定的 Wire `v0.7.0`，首次执行可能下载工具依赖，无需全局安装 Wire。`new` 只克隆 Lambo 前后端模板并替换两个 Go 模块路径，不覆盖已有目录、不安装依赖。`new` 和 `upgrade` 默认使用公开仓库，因此新增工具需发布后才可从远端获得。
 

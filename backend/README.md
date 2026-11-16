@@ -13,6 +13,6 @@ lambo wire
 lambo run
 ```
 
-后端组件按 `internal/model → repository → service → handler` 分层生成。生成后的组件需补齐业务实现、Wire 装配和路由；当前模板的真实数据库初始化及用户查询仍待实现，不能直接作为完整后台部署。
+后端组件按 `internal/model → repository → service → handler` 分层生成，包含字段校验、分页/详情/新增/编辑/删除及权限路由注册方法。连接数据库并迁移表后，显式装配或加入 Wire，再调用处理器的 `RegisterRoutes(router, authorize)`；具体步骤见生成器说明。项目现有数据库初始化及用户查询仍待实现，认证与数据范围需接入业务规则。
 
 本目录可独立执行 `go build ./...` 和 `go vet ./...`。命令中的 `run` 只在开发者明确需要运行时使用。

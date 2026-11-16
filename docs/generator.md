@@ -8,10 +8,10 @@ CLI 是跨前后端的项目开发工具，独立模块为 `github.com/Edward-Ja
 
 | 命令 | 产物 |
 | --- | --- |
-| `lambo create model category` | 后端模型 |
-| `lambo create repository category` | 后端仓储起始组件 |
-| `lambo create service category` | 后端服务起始组件 |
-| `lambo create handler category` | 后端处理器起始组件 |
+| `lambo create model category` | 后端模型、请求/查询/分页类型、字段校验 |
+| `lambo create repository category` | GORM 分页、详情、新增、编辑、删除 |
+| `lambo create service category` | 参数与 ID 校验、新增默认值、业务调用 |
+| `lambo create handler category` | 五个 HTTP 接口、统一响应、权限路由注册、操作日志 |
 | `lambo create backend category` | 以上四个组件 |
 | `lambo create frontend category` | Vben Element Plus API、字段配置、列表、详情/编辑弹窗与路由，共 5 个文件 |
 | `lambo create all category` | 后端 4 个文件 + 前端 5 个文件 |
@@ -34,7 +34,7 @@ CLI 是跨前后端的项目开发工具，独立模块为 `github.com/Edward-Ja
 | `fields[].type` | `string`、`number`、`boolean` |
 | `fields[].required` | 表单必填；`0`、`false` 仍是有效值 |
 | `fields[].search` | 在查询表单和分页请求中使用此字段 |
-| `fields[].readOnly` | 列表、详情可见，不进入编辑表单或提交体；关键业务状态应设为只读 |
+| `fields[].readOnly` | 列表、详情可见，不进入编辑表单或提交体；关键业务状态应设为只读。生成完整 CRUD 时，只读必填字段必须提供显式默认值 |
 | `fields[].maxLength` | 字符串最大长度 |
 | `fields[].default` | 默认值，需匹配类型和选项；不使用真假值判断替代类型判断 |
 | `fields[].options` | `[{"label":"启用","value":1}]`，类型必须匹配；回显使用同一份选项，未知值保留显示 |
@@ -53,15 +53,53 @@ CLI 是跨前后端的项目开发工具，独立模块为 `github.com/Edward-Ja
 | 编辑 | `PUT /api/categories/:id`，可编辑字段 JSON | 保存后的 `Row` |
 | 删除 | `DELETE /api/categories/:id` | 任意成功结果 |
 
-记录使用小写 `id`，字段名与定义一致。未填写的可选字段可能省略；需要清空可选字段时，后端应按完整替换约定处理 `PUT`，或调整生成的客户端与业务接口同时使用明确的清空协议。后端分页、数据范围、索引、授权和写入校验需实现后再联调。
+记录使用小写 `id`，字段名与定义一致。`POST` 对缺省字段应用显式默认值；`PUT` 使用完整替换语义，必须提供所有可编辑的必填字段，缺省或 `null` 的可选字段清空为数据库 `NULL`，响应省略这些字段。必填字段显式传 `null` 返回 400，缺省与显式清空区分处理。数值 `0`、布尔 `false` 均是有效值；只读字段、ID、时间戳和未知字段不能写入请求。只读字段的显式默认值在新增时写入，编辑时保留原值。
+
+查询默认 `page=1`、`pageSize=20`，页大小最大 100、页码最大 1000000；非法范围返回 400。普通字符串按字面包含筛选，静态选项、数字和布尔值按相等筛选，多字段条件以 AND 组合；按 ID 倒序稳定分页。查询字段生成索引，包含匹配和总数统计仍需按实际数据量评估。所有查询参数化，更新使用字段白名单与事务，不存在的记录不会自动新增。
+
+数字 ID 由数据库生成，限制在 JS 安全整数范围；超过范围的新增事务回滚。字符串 ID 使用 UUID。缺失记录返回 HTTP 404，非法参数返回 400，超过 1 MiB 的请求体返回 413；数据库错误记录到 Zap，响应返回通用 500 信息。响应仍统一为 `{code, data, message}`。
 
 按钮使用 `<前缀>:create`、`:update`、`:delete`、`:query`。需要在后端实际下发这些权限码；生成器不会添加管理员绕过，也不自动写入权限表。路由 `/business/<名称>` 是本地路由起点，动态菜单接入后可引用 `business/<名称>/index.vue` 组件。
+
+## 后端装配与数据库
+
+后端仍使用独立注入的 GORM 连接。项目原有 `repository.NewDb()` 尚未初始化真实数据库；先接入可用连接，再执行迁移和装配。数据库产品与正式迁移方案继续由项目确定，生成器不新增业务数据库驱动。
+
+以生成的 `category` 为例，在已有应用初始化入口中显式装配，或把相同构造函数加入现有 Wire provider set：
+
+```go
+// db 是应用已初始化的 GORM 连接，logger 沿用现有日志实例。
+if err := db.AutoMigrate(&model.Category{}); err != nil {
+    return err
+}
+repo := repository.NewCategoryRepository(repository.NewRepository(logger, db))
+svc := service.NewCategoryService(service.NewService(logger), repo)
+categoryHandler := handler.NewCategoryHandler(handler.NewHandler(logger), svc)
+if err := categoryHandler.RegisterRoutes(router, authorize); err != nil {
+    return err
+}
+```
+
+`router` 使用应用根路由器，生成方法按字段定义中的完整 API 路径注册。`authorize` 的签名为 `func(*gin.Context, string) bool`，由现有认证/权限模块根据当前身份与权限码返回结果。未提供该函数时拒绝注册；返回 `false` 时中止请求并返回 403。列表和详情检查 `:query`，其余操作分别检查 `:create`、`:update`、`:delete`。
+
+前端上游开发配置默认连接 Mock。接真实后端时，可在 `frontend/apps/web-ele/.env.development.local` 指定后端地址，并关闭 Mock：
+
+```dotenv
+VITE_GLOB_API_URL=http://127.0.0.1:8000
+VITE_NITRO_MOCK=false
+```
+
+字段定义中的 `api` 是完整后端路径，直接连接时 `VITE_GLOB_API_URL` 使用后端 origin；例如上述配置与 `/api/categories` 组合后请求 `http://127.0.0.1:8000/api/categories`。通过反向代理时，客户端 baseURL 是额外的网关挂载层，代理移除挂载前缀后须保留完整后端路径。沿用 `/api` 挂载并移除首段 `/api` 的代理配置时，浏览器请求为 `/api/api/categories`；不要把网关前缀与字段定义路径重复移除。
+
+生成器不改写已有 HTTP/Wire 手写文件；完成这一步显式接入后，普通 CRUD 可直接调用。认证会话、权限记录下发、按用户/部门的数据范围、唯一性业务约束、计算字段和状态流转仍需接入具体业务规则，不能用通用编辑代替业务动作。
+
+本地行为验证在隔离项目使用临时 SQLite、Gin 测试请求及真实生成的前端 API 函数，覆盖成功与失败路径；这不代表已选择 SQLite 为业务主数据库。
 
 ## 模板与更新策略
 
 模板内嵌于 CLI，无需联网生成。`tools/lambo/tpl/create/*.tpl` 是后端模板，`tools/lambo/tpl/frontend/*.tpl` 是前端模板。使用 `--tpl-path` 时保留这两个子目录，可只提供需要替换的文件，其余回落到内嵌模板。
 
-生成器先渲染并检查整批文件，内容一致则跳过，有冲突则整批停止；新文件以独占创建方式写入，写入失败撤销本批新文件。拒绝经过符号链接的目标路径。当前不尝试自动合并手写区，也不提供 `--force`：修改后的代码（含自动格式化）需要人工合并，缺少或不同的产物会让 `--check` 失败。
+生成器先渲染并检查整批文件，拒绝与其他 Go 文件的包级名称或生成 API 路径冲突；内容一致则跳过，有冲突则整批停止；新文件以独占创建方式写入，写入失败撤销本批新文件。拒绝经过符号链接的目标路径。当前不尝试自动合并手写区，也不提供 `--force`：修改后的代码（含自动格式化）需要人工合并，缺少或不同的产物会让 `--check` 失败。
 
 ## 新建、运行与 Wire
 
