@@ -12,8 +12,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/Edward-Jackie/lambo/backend/tools/lambo/config"
-	"github.com/Edward-Jackie/lambo/backend/tools/lambo/internal/pkg/helper"
+	"github.com/Edward-Jackie/lambo/tools/lambo/config"
+	"github.com/Edward-Jackie/lambo/tools/lambo/internal/pkg/helper"
 	"github.com/spf13/cobra"
 	"golang.org/x/mod/modfile"
 	"golang.org/x/mod/module"
@@ -62,7 +62,7 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 	for _, module := range []struct{ dir, suffix string }{
 		{"backend", "/backend"},
-		{"backend/tools/lambo", "/backend/tools/lambo"},
+		{"tools/lambo", "/tools/lambo"},
 	} {
 		base := filepath.Join(target, module.dir)
 		oldModule, err := helper.ReadModulePath(base)

@@ -10,8 +10,8 @@ import (
 	"sort"
 
 	"github.com/AlecAivazis/survey/v2"
-	"github.com/Edward-Jackie/lambo/backend/tools/lambo/config"
-	"github.com/Edward-Jackie/lambo/backend/tools/lambo/internal/pkg/helper"
+	"github.com/Edward-Jackie/lambo/tools/lambo/config"
+	"github.com/Edward-Jackie/lambo/tools/lambo/internal/pkg/helper"
 	"github.com/spf13/cobra"
 )
 
