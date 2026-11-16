@@ -21,14 +21,29 @@ import (
 
 func NewWire(viperViper *viper.Viper, logger *log.Logger) (*gin.Engine, func(), error) {
 	handlerHandler := handler.NewHandler(logger)
-	serviceService := service.NewService(logger)
-	db := repository.NewDb()
+	db, cleanup, err := repository.NewDb(viperViper, logger)
+	if err != nil {
+		return nil, nil, err
+	}
 	repositoryRepository := repository.NewRepository(logger, db)
-	userRepository := repository.NewUserRepository(repositoryRepository)
-	userService := service.NewUserService(serviceService, userRepository)
-	userHandler := handler.NewUserHandler(handlerHandler, userService)
-	engine := server.NewServerHTTP(logger, userHandler)
+	authRepository := repository.NewAuthRepository(repositoryRepository)
+	authService, err := service.NewAuthService(authRepository, viperViper)
+	if err != nil {
+		cleanup()
+		return nil, nil, err
+	}
+	authHandler := handler.NewAuthHandler(handlerHandler, authService)
+	serviceService := service.NewService(logger)
+	categoryRepository := repository.NewCategoryRepository(repositoryRepository)
+	categoryService := service.NewCategoryService(serviceService, categoryRepository)
+	categoryHandler := handler.NewCategoryHandler(handlerHandler, categoryService)
+	engine, err := server.NewServerHTTP(logger, authHandler, categoryHandler)
+	if err != nil {
+		cleanup()
+		return nil, nil, err
+	}
 	return engine, func() {
+		cleanup()
 	}, nil
 }
 
@@ -36,8 +51,8 @@ func NewWire(viperViper *viper.Viper, logger *log.Logger) (*gin.Engine, func(), 
 
 var ServerSet = wire.NewSet(server.NewServerHTTP)
 
-var RepositorySet = wire.NewSet(repository.NewDb, repository.NewRepository, repository.NewUserRepository)
+var RepositorySet = wire.NewSet(repository.NewDb, repository.NewRepository, repository.NewCategoryRepository, repository.NewAuthRepository)
 
-var ServiceSet = wire.NewSet(service.NewService, service.NewUserService)
+var ServiceSet = wire.NewSet(service.NewService, service.NewCategoryService, service.NewAuthService)
 
-var HandlerSet = wire.NewSet(handler.NewHandler, handler.NewUserHandler)
+var HandlerSet = wire.NewSet(handler.NewHandler, handler.NewCategoryHandler, handler.NewAuthHandler)

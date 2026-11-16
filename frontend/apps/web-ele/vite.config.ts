@@ -15,9 +15,8 @@ export default defineConfig(async () => {
         proxy: {
           '/api': {
             changeOrigin: true,
-            rewrite: (path) => path.replace(/^\/api/, ''),
-            // mock代理目标地址
-            target: 'http://localhost:5320/api',
+            // 保留完整 API 路径，登录和生成的业务接口共用同一真实后端。
+            target: 'http://127.0.0.1:8000',
             ws: true,
           },
         },

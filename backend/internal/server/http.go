@@ -1,28 +1,45 @@
 package server
 
 import (
-	"github.com/gin-gonic/gin"
+	"fmt"
+
 	"github.com/Edward-Jackie/lambo/backend/internal/handler"
 	"github.com/Edward-Jackie/lambo/backend/internal/middleware"
 	"github.com/Edward-Jackie/lambo/backend/pkg/helper/resp"
 	"github.com/Edward-Jackie/lambo/backend/pkg/log"
+	"github.com/gin-gonic/gin"
 )
 
 func NewServerHTTP(
 	logger *log.Logger,
-	userHandler *handler.UserHandler,
-) *gin.Engine {
+	authHandler *handler.AuthHandler,
+	categoryHandler *handler.CategoryHandler,
+) (*gin.Engine, error) {
+	if logger == nil || authHandler == nil || categoryHandler == nil {
+		return nil, fmt.Errorf("HTTP 服务缺少认证或分类依赖")
+	}
+	r := newBaseHTTPServer()
+	authHandler.RegisterRoutes(r)
+	if err := categoryHandler.RegisterRoutes(r.Group("", authHandler.RequireSession()), authHandler.Authorize); err != nil {
+		return nil, err
+	}
+	return r, nil
+}
+
+func newBaseHTTPServer() *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
 	r.Use(
 		middleware.CORSMiddleware(),
 	)
+	// 仅表示 HTTP 进程可响应，不代替数据库和业务就绪检查。
+	r.GET("/healthz", func(ctx *gin.Context) {
+		resp.HandleSuccess(ctx, map[string]interface{}{"status": "ok"})
+	})
 	r.GET("/", func(ctx *gin.Context) {
 		resp.HandleSuccess(ctx, map[string]interface{}{
 			"say": "Hi Lambo!",
 		})
 	})
-	r.GET("/user", userHandler.GetUserById)
-
 	return r
 }

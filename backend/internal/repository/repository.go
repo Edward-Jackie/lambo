@@ -18,12 +18,3 @@ func NewRepository(logger *log.Logger, db *gorm.DB) *Repository {
 		logger: logger,
 	}
 }
-func NewDb() *gorm.DB {
-	// TODO: init db
-	//db, err := gorm.Open(mysql.Open(conf.GetString("data.mysql.user")), &gorm.Config{})
-	//if err != nil {
-	//	panic(err)
-	//}
-	//return db
-	return &gorm.DB{}
-}
