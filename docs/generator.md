@@ -63,7 +63,7 @@ CLI 是跨前后端的项目开发工具，独立模块为 `github.com/Edward-Ja
 
 ## 后端装配与数据库
 
-后端仍使用独立注入的 GORM 连接。项目原有 `repository.NewDb()` 尚未初始化真实数据库；先接入可用连接，再执行迁移和装配。数据库产品与正式迁移方案继续由项目确定，生成器不新增业务数据库驱动。
+后端使用独立注入的 GORM 连接。主服务的 `repository.NewDb` 已接入 PostgreSQL，Wire 已装配示例分类 CRUD 及账号权限路由；配置和初始化步骤见 [后端 README](../backend/README.md)。生成器仍只输出通用 GORM 组件，不替其他应用选择数据库或自动修改迁移入口。
 
 以生成的 `category` 为例，在已有应用初始化入口中显式装配，或把相同构造函数加入现有 Wire provider set：
 
@@ -82,18 +82,11 @@ if err := categoryHandler.RegisterRoutes(router, authorize); err != nil {
 
 `router` 使用应用根路由器，生成方法按字段定义中的完整 API 路径注册。`authorize` 的签名为 `func(*gin.Context, string) bool`，由现有认证/权限模块根据当前身份与权限码返回结果。未提供该函数时拒绝注册；返回 `false` 时中止请求并返回 403。列表和详情检查 `:query`，其余操作分别检查 `:create`、`:update`、`:delete`。
 
-前端上游开发配置默认连接 Mock。接真实后端时，可在 `frontend/apps/web-ele/.env.development.local` 指定后端地址，并关闭 Mock：
+前端 `web-ele` 当前已关闭 Mock，登录、账号信息、权限码、菜单和分类均使用真实后端。开发环境 API baseURL 为 `/`，Vite 将 `/api` 原样代理到 `http://127.0.0.1:8000`；反向代理也需保留该路径。字段定义中的 `api` 是完整路径，请求为 `/api/categories`，不要重复添加 `/api` 或移除后端所需的前缀。需要直接连接其他后端时，可在 `.env.development.local` 设置 `VITE_GLOB_API_URL` 为对应 origin。
 
-```dotenv
-VITE_GLOB_API_URL=http://127.0.0.1:8000
-VITE_NITRO_MOCK=false
-```
+生成器不改写已有 HTTP/Wire 手写文件；新模块仍需像分类一样显式加入迁移、Wire 和受会话保护的路由组，并授予所需权限码。当前角色权限是后台账号的显式静态授权，完整账号/角色管理、按用户/部门的数据范围、唯一性业务约束、计算字段和状态流转仍需接入具体业务规则。
 
-字段定义中的 `api` 是完整后端路径，直接连接时 `VITE_GLOB_API_URL` 使用后端 origin；例如上述配置与 `/api/categories` 组合后请求 `http://127.0.0.1:8000/api/categories`。通过反向代理时，客户端 baseURL 是额外的网关挂载层，代理移除挂载前缀后须保留完整后端路径。沿用 `/api` 挂载并移除首段 `/api` 的代理配置时，浏览器请求为 `/api/api/categories`；不要把网关前缀与字段定义路径重复移除。
-
-生成器不改写已有 HTTP/Wire 手写文件；完成这一步显式接入后，普通 CRUD 可直接调用。认证会话、权限记录下发、按用户/部门的数据范围、唯一性业务约束、计算字段和状态流转仍需接入具体业务规则，不能用通用编辑代替业务动作。
-
-本地行为验证在隔离项目使用临时 SQLite、Gin 测试请求及真实生成的前端 API 函数，覆盖成功与失败路径；这不代表已选择 SQLite 为业务主数据库。
+生成器行为验证使用隔离 SQLite 项目；主服务集成另外使用 独立 PostgreSQL 测试库完成真实登录、动态菜单、权限拒绝、浏览器页面增删改查及重启持久化验证。这不代表生产迁移与部署已完成。
 
 ## 模板与更新策略
 

@@ -4,7 +4,7 @@
 
 - 已确定使用 Vben Admin + Nunu Basic；一个仓库、前后端分目录、后端模块化单体、REST JSON、GORM。
 - 当前已有 Lambo CLI、后端组件与 Vben Element Plus 前端生成器；业务后台仍在开发。功能范围和验收以根目录 `plan.md` 为准，技术取舍见 `docs/architecture/0001-foundation.md`。
-- 业务 UI 已确定为 Element Plus（`frontend/apps/web-ele`）；主数据库、字段元数据真源和发布机制尚未定稿，不得将候选方案写成已实现事实。
+- 业务 UI 已确定为 Element Plus（`frontend/apps/web-ele`）；开发联调使用 PostgreSQL；生产数据库迁移、字段元数据真源和发布机制尚未定稿，不得将候选方案写成已实现事实。
 
 ## 开发纪律
 

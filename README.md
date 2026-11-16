@@ -2,7 +2,7 @@
 
 基于 Vben Admin + Gin/GORM 的 Go / Vue 业务脚手架，后端从 Nunu Basic 演进。对外开发工具统一使用 **`lambo`**。
 
-**当前能力：** CLI 新建项目、后端 CRUD 生成、Vben Element Plus 前端代码生成、后端热重载、Wire 生成与工具升级。生成的前后端 API 已验证普通 CRUD；认证、权限后台、字典后台、业务主数据库初始化和业务状态流转仍按 [plan.md](plan.md) 开发。
+**当前能力：** CLI 新建项目、后端 CRUD 生成、Vben Element Plus 前端代码生成、后端热重载、Wire 生成与工具升级。生成的分类 CRUD 已接入主服务和 PostgreSQL，前端已切换真实登录、动态菜单与权限接口，并完成页面增删改查。完整权限后台、字典后台、生产迁移和业务状态流转仍按 [plan.md](plan.md) 开发。
 
 ## 安装本地命令
 
@@ -44,7 +44,7 @@ lambo create handler category
 lambo create backend category --schema tools/lambo/examples/category.json
 lambo create all category --schema tools/lambo/examples/category.json
 
-# 以下命令由开发者按需执行，本次交付没有启动服务
+# 以下命令由开发者按需执行
 lambo run
 lambo run backend/cmd/server -- -conf config/local.yml
 lambo wire
@@ -65,7 +65,7 @@ lambo upgrade
 - 后端模块为 `github.com/Edward-Jackie/lambo/backend`；CLI 位于 `tools/lambo/`，保留独立 Go 模块，工具依赖不进入业务服务。
 - 前端使用 Element Plus 作为首套业务应用；暂时保留其他上游应用，不维护其生成模板。
 - 前端要求 Node.js `^22.18.0 || ^24.12.0`、pnpm `>=11.0.0`，锁定 `pnpm@11.16.0`。在 `frontend/` 内执行 `pnpm install --frozen-lockfile`。
-- 继承的数据库初始化和用户查询仍是占位实现；公开演示配置不得用于真实部署。前端按钮隐藏不代替后端鉴权。
+- 主服务已装配 PostgreSQL、账号会话和分类接口；继承的用户示例未作为公开业务路由注册。公开配置不含凭据，运行配置与初始化说明见 [后端 README](backend/README.md)。前端按钮隐藏不代替后端鉴权。
 
 ## 目录与文档
 
