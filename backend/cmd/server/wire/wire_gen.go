@@ -7,10 +7,12 @@
 package wire
 
 import (
-	"github.com/Edward-Jackie/lambo/backend/internal/handler"
-	"github.com/Edward-Jackie/lambo/backend/internal/repository"
-	"github.com/Edward-Jackie/lambo/backend/internal/server"
-	"github.com/Edward-Jackie/lambo/backend/internal/service"
+	handler2 "github.com/Edward-Jackie/lambo/backend/internal/business/handler"
+	repository2 "github.com/Edward-Jackie/lambo/backend/internal/business/repository"
+	service2 "github.com/Edward-Jackie/lambo/backend/internal/business/service"
+	"github.com/Edward-Jackie/lambo/backend/internal/system/handler"
+	"github.com/Edward-Jackie/lambo/backend/internal/system/repository"
+	"github.com/Edward-Jackie/lambo/backend/internal/system/service"
 	"github.com/Edward-Jackie/lambo/backend/pkg/log"
 	"github.com/gin-gonic/gin"
 	"github.com/google/wire"
@@ -21,7 +23,7 @@ import (
 
 func NewWire(viperViper *viper.Viper, logger *log.Logger) (*gin.Engine, func(), error) {
 	handlerHandler := handler.NewHandler(logger)
-	db, cleanup, err := repository.NewDb(viperViper, logger)
+	db, cleanup, err := provideDb(viperViper, logger)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -33,20 +35,23 @@ func NewWire(viperViper *viper.Viper, logger *log.Logger) (*gin.Engine, func(), 
 		return nil, nil, err
 	}
 	authHandler := handler.NewAuthHandler(handlerHandler, authService)
-	serviceService := service.NewService(logger)
-	categoryRepository := repository.NewCategoryRepository(repositoryRepository)
-	categoryService := service.NewCategoryService(serviceService, categoryRepository)
-	categoryHandler := handler.NewCategoryHandler(handlerHandler, categoryService)
+	handler3 := handler2.NewHandler(logger)
+	serviceService := service2.NewService(logger)
+	repository3 := repository2.NewRepository(logger, db)
+	categoryRepository := repository2.NewCategoryRepository(repository3)
+	categoryService := service2.NewCategoryService(serviceService, categoryRepository)
+	categoryHandler := handler2.NewCategoryHandler(handler3, categoryService)
+	service3 := service.NewService(logger)
 	systemUserRepository := repository.NewSystemUserRepository(repositoryRepository)
-	systemUserService := service.NewSystemUserService(serviceService, systemUserRepository)
+	systemUserService := service.NewSystemUserService(service3, systemUserRepository)
 	systemUserHandler := handler.NewSystemUserHandler(handlerHandler, systemUserService)
 	systemRoleRepository := repository.NewSystemRoleRepository(repositoryRepository)
-	systemRoleService := service.NewSystemRoleService(serviceService, systemRoleRepository)
+	systemRoleService := service.NewSystemRoleService(service3, systemRoleRepository)
 	systemRoleHandler := handler.NewSystemRoleHandler(handlerHandler, systemRoleService)
 	systemMenuRepository := repository.NewSystemMenuRepository(repositoryRepository)
-	systemMenuService := service.NewSystemMenuService(serviceService, systemMenuRepository)
+	systemMenuService := service.NewSystemMenuService(service3, systemMenuRepository)
 	systemMenuHandler := handler.NewSystemMenuHandler(handlerHandler, systemMenuService)
-	engine, err := server.NewServerHTTP(logger, authHandler, categoryHandler, systemUserHandler, systemRoleHandler, systemMenuHandler)
+	engine, err := provideEngine(logger, authHandler, categoryHandler, systemUserHandler, systemRoleHandler, systemMenuHandler)
 	if err != nil {
 		cleanup()
 		return nil, nil, err
@@ -58,10 +63,12 @@ func NewWire(viperViper *viper.Viper, logger *log.Logger) (*gin.Engine, func(), 
 
 // wire.go:
 
-var ServerSet = wire.NewSet(server.NewServerHTTP)
+var ServerSet = wire.NewSet(provideEngine)
 
-var RepositorySet = wire.NewSet(repository.NewDb, repository.NewRepository, repository.NewCategoryRepository, repository.NewAuthRepository, repository.NewSystemUserRepository, repository.NewSystemRoleRepository, repository.NewSystemMenuRepository)
+var RepositorySet = wire.NewSet(
+	provideDb, repository.NewRepository, repository.NewAuthRepository, repository.NewSystemUserRepository, repository.NewSystemRoleRepository, repository.NewSystemMenuRepository, repository2.NewRepository, repository2.NewCategoryRepository,
+)
 
-var ServiceSet = wire.NewSet(service.NewService, service.NewCategoryService, service.NewAuthService, service.NewSystemUserService, service.NewSystemRoleService, service.NewSystemMenuService)
+var ServiceSet = wire.NewSet(service.NewService, service.NewAuthService, service.NewSystemUserService, service.NewSystemRoleService, service.NewSystemMenuService, service2.NewService, service2.NewCategoryService)
 
-var HandlerSet = wire.NewSet(handler.NewHandler, handler.NewCategoryHandler, handler.NewAuthHandler, handler.NewSystemUserHandler, handler.NewSystemRoleHandler, handler.NewSystemMenuHandler)
+var HandlerSet = wire.NewSet(handler.NewHandler, handler.NewAuthHandler, handler.NewSystemUserHandler, handler.NewSystemRoleHandler, handler.NewSystemMenuHandler, handler2.NewHandler, handler2.NewCategoryHandler)

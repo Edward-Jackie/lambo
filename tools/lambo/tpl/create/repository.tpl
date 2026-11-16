@@ -5,7 +5,7 @@ import (
  "context"
  "errors"
  {{if .UsesSubstringSearch}}"strings"{{end}}
- "{{ .Module }}/internal/model"
+ "{{ .Module }}/internal/{{.Domain}}/model"
  "gorm.io/gorm"
  "gorm.io/gorm/clause"
 )

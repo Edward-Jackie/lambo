@@ -4,44 +4,49 @@
 package wire
 
 import (
-	"github.com/Edward-Jackie/lambo/backend/internal/handler"
-	"github.com/Edward-Jackie/lambo/backend/internal/repository"
-	"github.com/Edward-Jackie/lambo/backend/internal/server"
-	"github.com/Edward-Jackie/lambo/backend/internal/service"
+	bizhandler "github.com/Edward-Jackie/lambo/backend/internal/business/handler"
+	bizrepository "github.com/Edward-Jackie/lambo/backend/internal/business/repository"
+	bizservice "github.com/Edward-Jackie/lambo/backend/internal/business/service"
+	syshandler "github.com/Edward-Jackie/lambo/backend/internal/system/handler"
+	sysrepository "github.com/Edward-Jackie/lambo/backend/internal/system/repository"
+	sysservice "github.com/Edward-Jackie/lambo/backend/internal/system/service"
 	"github.com/Edward-Jackie/lambo/backend/pkg/log"
 	"github.com/gin-gonic/gin"
 	"github.com/google/wire"
 	"github.com/spf13/viper"
 )
 
-var ServerSet = wire.NewSet(server.NewServerHTTP)
+var ServerSet = wire.NewSet(provideEngine)
 
 var RepositorySet = wire.NewSet(
-	repository.NewDb,
-	repository.NewRepository,
-	repository.NewCategoryRepository,
-	repository.NewAuthRepository,
-	repository.NewSystemUserRepository,
-	repository.NewSystemRoleRepository,
-	repository.NewSystemMenuRepository,
+	provideDb,
+	sysrepository.NewRepository,
+	sysrepository.NewAuthRepository,
+	sysrepository.NewSystemUserRepository,
+	sysrepository.NewSystemRoleRepository,
+	sysrepository.NewSystemMenuRepository,
+	bizrepository.NewRepository,
+	bizrepository.NewCategoryRepository,
 )
 
 var ServiceSet = wire.NewSet(
-	service.NewService,
-	service.NewCategoryService,
-	service.NewAuthService,
-	service.NewSystemUserService,
-	service.NewSystemRoleService,
-	service.NewSystemMenuService,
+	sysservice.NewService,
+	sysservice.NewAuthService,
+	sysservice.NewSystemUserService,
+	sysservice.NewSystemRoleService,
+	sysservice.NewSystemMenuService,
+	bizservice.NewService,
+	bizservice.NewCategoryService,
 )
 
 var HandlerSet = wire.NewSet(
-	handler.NewHandler,
-	handler.NewCategoryHandler,
-	handler.NewAuthHandler,
-	handler.NewSystemUserHandler,
-	handler.NewSystemRoleHandler,
-	handler.NewSystemMenuHandler,
+	syshandler.NewHandler,
+	syshandler.NewAuthHandler,
+	syshandler.NewSystemUserHandler,
+	syshandler.NewSystemRoleHandler,
+	syshandler.NewSystemMenuHandler,
+	bizhandler.NewHandler,
+	bizhandler.NewCategoryHandler,
 )
 
 func NewWire(*viper.Viper, *log.Logger) (*gin.Engine, func(), error) {

@@ -1,4 +1,5 @@
 {
+  "domain": "system",
   "name": "system-menu",
   "title": "菜单管理",
   "api": "/api/system/menus",

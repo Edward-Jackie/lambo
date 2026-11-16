@@ -1,4 +1,5 @@
 {
+  "domain": "system",
   "name": "system-user",
   "title": "用户管理",
   "api": "/api/system/users",

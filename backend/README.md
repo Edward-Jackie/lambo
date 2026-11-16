@@ -13,7 +13,9 @@ lambo wire
 lambo run
 ```
 
-后端组件按 `internal/model → repository → service → handler` 分层生成，包含字段校验、分页/详情/新增/编辑/删除及权限路由注册方法。连接数据库并迁移表后，显式装配或加入 Wire，再调用处理器的 `RegisterRoutes(router, authorize)`；具体步骤见生成器说明。主服务已通过 Wire 装配分类 CRUD、PostgreSQL、真实账号会话及权限校验；旧用户示例不再公开注册。其他业务模块和数据范围仍需显式接入。
+后端组件按 `internal/<域>/model → repository → service → handler` 分层生成，域为 `business`（业务，默认）或 `system`（系统）。包含字段校验、分页/详情/新增/编辑/删除及权限路由注册方法。连接数据库并迁移表后，显式装配或加入 Wire，再调用处理器的 `RegisterRoutes(router, authorize)`；具体步骤见生成器说明。主服务已通过 Wire 装配分类 CRUD、PostgreSQL、真实账号会话及权限校验；旧用户示例已删除。其他业务模块和数据范围仍需显式接入。
+
+`internal/` 分三区：`platform/` 只放数据库连接与 HTTP 底座，`system/` 放系统表模型与认证授权，`business/` 放业务模块；依赖方向为 `business → system → platform`，`system` 不引用 `business`。路由与迁移清单在 `cmd/server/wire/` 装配。
 
 本目录可独立执行 `go build ./...` 和 `go vet ./...`。命令中的 `run` 只在开发者明确需要运行时使用。
 

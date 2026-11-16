@@ -4,8 +4,8 @@ package service
 import (
  "context"
  {{if eq .IDType "string"}}"github.com/google/uuid"{{end}}
- "{{ .Module }}/internal/model"
- "{{ .Module }}/internal/repository"
+ "{{ .Module }}/internal/{{.Domain}}/model"
+ "{{ .Module }}/internal/{{.Domain}}/repository"
 )
 
 type {{ .StructName }}Service interface {

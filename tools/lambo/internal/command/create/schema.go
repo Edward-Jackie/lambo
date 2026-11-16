@@ -18,6 +18,7 @@ import (
 // Spec 是当前开发期生成契约，不替代后续字典后台与枚举发布模型。
 type Spec struct {
 	Name       string  `json:"name"`
+	Domain     string  `json:"domain"`
 	Title      string  `json:"title"`
 	API        string  `json:"api"`
 	Permission string  `json:"permission"`
@@ -56,7 +57,7 @@ var permissionPattern = regexp.MustCompile(`^[a-z][a-z0-9:_-]*$`)
 func stringLength(value string) int { return len(utf16.Encode([]rune(value))) }
 
 func loadSpec(name, path string) (Spec, error) {
-	spec := Spec{Name: name, Title: name, API: "/api/" + name, Permission: "business:" + name, IDType: "number"}
+	spec := Spec{Name: name, Domain: "business", Title: name, API: "/api/" + name, Permission: "business:" + name, IDType: "number"}
 	if !namePattern.MatchString(name) {
 		return spec, fmt.Errorf("名称 %q 必须使用小写英文、数字及中间的连字符或下划线", name)
 	}
@@ -80,6 +81,9 @@ func loadSpec(name, path string) (Spec, error) {
 	}
 	if spec.Name != name {
 		return spec, fmt.Errorf("字段定义名称 %q 与命令名称 %q 不一致", spec.Name, name)
+	}
+	if spec.Domain != "system" && spec.Domain != "business" {
+		return spec, fmt.Errorf("domain 只支持 system 或 business")
 	}
 	if strings.TrimSpace(spec.Title) == "" || !apiPattern.MatchString(spec.API) || !permissionPattern.MatchString(spec.Permission) {
 		return spec, fmt.Errorf("必须提供标题、以 / 开头的静态 API 路径和合法权限前缀")

@@ -25,6 +25,7 @@ CLI 是跨前后端的项目开发工具，独立模块为 `github.com/Edward-Ja
 | 属性 | 说明 |
 | --- | --- |
 | `name` | 可省略；提供时必须与命令名称一致 |
+| `domain` | `business`（默认）或 `system`，决定后端输出到 `internal/business/` 还是 `internal/system/` |
 | `title` | 中文页面标题，默认使用名称 |
 | `api` | 静态 REST 路径，默认 `/api/<名称>`；不自动处理单复数 |
 | `permission` | 权限前缀，默认 `business:<名称>` |
@@ -63,9 +64,11 @@ CLI 是跨前后端的项目开发工具，独立模块为 `github.com/Edward-Ja
 
 ## 后端装配与数据库
 
-后端使用独立注入的 GORM 连接。主服务的 `repository.NewDb` 已接入 PostgreSQL，Wire 已装配示例分类 CRUD 及账号权限路由；配置和初始化步骤见 [后端 README](../backend/README.md)。生成器仍只输出通用 GORM 组件，不替其他应用选择数据库或自动修改迁移入口。
+后端使用独立注入的 GORM 连接。主服务的 `platform/database.NewDb` 已接入 PostgreSQL，迁移清单由装配层给出；Wire 已装配示例分类 CRUD 及账号权限路由。配置和初始化步骤见 [后端 README](../backend/README.md)。生成器只输出通用 GORM 组件，不替其他应用选择数据库或自动修改迁移入口。
 
-以生成的 `category` 为例，在已有应用初始化入口中显式装配，或把相同构造函数加入现有 Wire provider set：
+后端产物按 `domain` 落在两个平行区：`backend/internal/business/<层>/`（业务）与 `backend/internal/system/<层>/`（系统）。两区都按 `model`、`repository`、`service`、`handler` 分目录，包名与层名一致，同层内的 import 路径由域前缀区分：`internal/business/model` 与 `internal/system/model`。生成器不会输出到 `internal/platform/`，该目录只放数据库连接与 HTTP 底座。
+
+以生成的 `category`（`domain: business`）为例，在已有应用初始化入口中显式装配，或把相同构造函数加入现有 Wire provider set：
 
 ```go
 // db 是应用已初始化的 GORM 连接，logger 沿用现有日志实例。

@@ -1,4 +1,5 @@
 {
+  "domain": "system",
   "name": "system-role",
   "title": "角色管理",
   "api": "/api/system/roles",

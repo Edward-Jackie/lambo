@@ -34,3 +34,20 @@
 - 对外命令统一为 `lambo`，保留许可证和来源中的原作者信息。
 - 字段 JSON 是当前开发期生成契约，尚不代表字典后台与枚举发布真源已经确定。
 - 修改模板时，以实际生成产物进行 Go 构建、前端类型检查与构建，并验证冲突拒绝、重复生成和路径边界；不要只检查模板文本。
+
+## 后端分层
+
+- `backend/internal/` 按职责分三区：`platform/`（数据库连接、HTTP 引擎与中间件）、`system/`（认证、授权、账号、角色、菜单）、`business/`（业务模块）。`pkg/` 只放与项目无关的通用工具。
+- `system/` 与 `business/` 都按 `model`、`repository`、`service`、`handler` 四层平铺，包名与层名一致；同层靠域前缀区分，即 `internal/business/model` 与 `internal/system/model`，不用目录嵌套表达模块。
+- 依赖方向单向：`business` 可引用 `system`，`system` 不得引用 `business`；两者都可引用 `platform` 与 `pkg`，`platform`、`pkg` 不得引用 `system` 或 `business`。
+- 路由挂载、数据库迁移清单与 Wire 装配只出现在 `cmd/server/wire/`。`platform/httpserver` 只提供引擎、CORS 与 `/healthz`；`platform/database` 只提供连接和通用迁移，表清单由装配层传入。
+- 系统表的模型、事务与安全不变式（最后一个管理员保护、越权拒绝、会话撤销）留在 `system/`；`business/` 不得复制这些规则，也不得绕过 `system` 的 service 直接写系统表。
+- 生成位置由字段 JSON 的 `domain` 决定：`business`（默认）写 `internal/business/<层>/`，`system` 写 `internal/system/<层>/`。调整目录必须同步修改 `tools/lambo/internal/command/create/files.go` 与 `tpl/create/*.tpl` 的 import，否则下次生成会写回旧路径。
+- 已知待解耦项：`system/model/iam.go` 的 `PermissionCatalog`、`PageComponents` 与 `system/repository/iam_seed.go` 仍硬编码 `catalog:category` 权限码和"分类管理"菜单。目标是由业务模块注册权限与菜单种子，系统区不出现业务标识。
+
+## Docker 部署
+
+- Dockerfile、Compose、Nginx 与容器配置以 `deploy/` 为唯一入口；构建上下文为仓库根目录，使用各 Dockerfile 对应的 `.dockerignore`。
+- 后端运行镜像不包含开发 CLI；前端只构建 `@vben/web-ele`，通过部署环境文件覆盖公共 Mock 配置。
+- `/healthz` 只表示 HTTP 进程可响应，不等同于数据库、鉴权和业务就绪；不得据此宣称完整后台可部署。
+- 不自动启动 Docker 引擎或业务容器。Docker 不可用时明确区分 Compose 解析、源码构建与实际镜像/容器验证。

@@ -10,8 +10,8 @@ import (
  {{if eq .IDType "number"}}"strconv"{{end}}
  "github.com/gin-gonic/gin"
  "go.uber.org/zap"
- "{{.Module}}/internal/model"
- "{{ .Module }}/internal/service"
+ "{{.Module}}/internal/{{.Domain}}/model"
+ "{{ .Module }}/internal/{{.Domain}}/service"
  "{{ .Module }}/pkg/helper/resp"
 )
 

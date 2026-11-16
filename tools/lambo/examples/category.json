@@ -1,4 +1,5 @@
 {
+  "domain": "business",
   "name": "category",
   "title": "分类管理",
   "api": "/api/categories",

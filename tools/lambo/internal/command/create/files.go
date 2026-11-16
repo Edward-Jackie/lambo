@@ -56,6 +56,10 @@ func renderFiles(kind string, data templateData) ([]outputFile, error) {
 		}
 	}
 	kinds := []string{kind}
+	if data.Domain == "" {
+		// 未显式声明域时按业务区输出，避免手工构造的 Spec 生成空目录。
+		data.Domain = "business"
+	}
 	if kind == "backend" || kind == "all" {
 		kinds = []string{"model", "repository", "service", "handler"}
 	}
@@ -76,7 +80,7 @@ func renderFiles(kind string, data templateData) ([]outputFile, error) {
 				{"frontend/route.ts.tpl", src + "router/routes/modules/business/" + data.Name + ".ts"},
 			}
 		} else {
-			paths = [][2]string{{"create/" + current + ".tpl", "backend/internal/" + current + "/" + data.SnakeName() + ".go"}}
+			paths = [][2]string{{"create/" + current + ".tpl", "backend/internal/" + data.Domain + "/" + current + "/" + data.SnakeName() + ".go"}}
 		}
 		for _, pair := range paths {
 			source, err := tpl.CreateTemplateFS.ReadFile(pair[0])
