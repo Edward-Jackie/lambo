@@ -56,7 +56,7 @@ func provideDb(conf *viper.Viper, logger *log.Logger) (*gorm.DB, func(), error) 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	if err := platformdatabase.Migrate(ctx, db,
-		&sysmodel.Account{}, &sysmodel.Session{}, &sysmodel.SystemUser{}, &sysmodel.SystemRole{}, &sysmodel.SystemMenu{},
+		&sysmodel.Session{}, &sysmodel.SystemUser{}, &sysmodel.SystemRole{}, &sysmodel.SystemMenu{},
 		&sysmodel.AccountRole{}, &sysmodel.RoleMenu{}, &sysmodel.IAMMigration{},
 		&bizmodel.Category{},
 	); err != nil {

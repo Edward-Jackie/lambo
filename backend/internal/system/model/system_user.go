@@ -29,7 +29,7 @@ type SystemUser struct {
 	RoleNames    string   `json:"roleNames" gorm:"-"`
 	ID           uint64   `json:"id" gorm:"primaryKey"`
 	// 用户名
-	Username string `json:"username" gorm:"column:username;not null;size:64;index"`
+	Username string `json:"username" gorm:"column:username;not null;size:64;uniqueIndex:ux_lambo_accounts_username"`
 	// 姓名
 	RealName string `json:"realName" gorm:"column:real_name;not null;size:64;index"`
 	// 状态
