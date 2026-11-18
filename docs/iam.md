@@ -16,7 +16,7 @@
 
 ## 生成与扩展
 
-输入为 `tools/lambo/examples/system-{user,role,menu}.json`。依次执行 `lambo create all <名称> --schema <文件>`，得到三个模块共 27 个前后端基线文件。基础字段、校验、列表、详情、表单及 HTTP 契约复用生成结果；多对多关系、授权树、密码动作、树形菜单和鉴权在基线上扩展。初始产物副本保存于本地 `.artifacts/iam/generated/`，业务扩展后再次生成应报告差异，不覆盖修改。
+输入为 `tools/lambo/examples/system-{user,role,menu}.json`。依次执行 `lambo create all <名称> --schema <文件>`，得到三个模块共 30 个前后端基线文件（每模块后端 4 + 前端 5 + 菜单脚本 1）。基础字段、校验、列表、详情、表单及 HTTP 契约复用生成结果；多对多关系、授权树、密码动作、树形菜单和鉴权在基线上扩展。初始产物副本保存于本地 `.artifacts/iam/generated/`，业务扩展后再次生成应报告差异，不覆盖修改。
 
 ## 初始化数据
 
@@ -25,6 +25,8 @@
 脚本只写角色和菜单骨架（目录、页面），使用固定 ID 建立父子关系。按钮不写进 SQL，由页面权限前缀从 `PermissionCatalog` 派生成，避免菜单与权限码两处维护；管理员密码依赖运行时哈希，也不进 SQL。只读角色默认获得不挂在系统管理下的业务页面查询权限，系统管理页面不授予。
 
 `TestSeedSQLSplitsStatementsAndMatchesPermissionCatalog` 检查脚本可被正确拆分，且其中的页面权限码都存在于权限目录。新增系统模块时需要同步更新这份 SQL 与 `PermissionCatalog`。
+
+业务模块不走上面的一次性脚本。`lambo create frontend <名称>` 会在 `backend/internal/<domain>/seed/<名称>.sql` 生成幂等菜单脚本（page + 三个 button + admin 授权），由 `lambo db seed <名称>` 显式执行，不在启动时自动运行，避免重启改写人工调整过的授权。未执行时该模块接口按权限码返回 403、前端按钮隐藏：`account.Codes` 只从已授权且启用、父链完整的菜单 `permission` 聚合，代码中声明常量不等于已下发。
 
 ## 验收
 

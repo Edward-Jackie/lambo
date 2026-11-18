@@ -18,8 +18,11 @@ func TestGenerationContract(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(files) != 9 {
+	if len(files) != 10 {
 		t.Fatalf("产物数 %d", len(files))
+	}
+	if files[9].Path != "backend/internal/business/seed/category.sql" {
+		t.Fatalf("菜单脚本路径 %s", files[9].Path)
 	}
 	root := t.TempDir()
 	out := &bytes.Buffer{}
@@ -56,6 +59,43 @@ func TestGenerationContract(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(root, files[0].Path)); !os.IsNotExist(err) {
 		t.Fatal("冲突时生成了部分文件")
+	}
+}
+
+func TestMenuSeedSQL(t *testing.T) {
+	spec, err := loadSpec("category", "../../../examples/category.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	files, err := renderFiles("frontend", templateData{Spec: spec, Module: "example.com/shop/backend"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	sql := string(files[len(files)-1].Data)
+	// 幂等：page 以 path 去重，button 以 permission 去重，授权以角色菜单对去重。
+	if strings.Count(sql, "NOT EXISTS") != 5 {
+		t.Fatalf("幂等条件数 %d，期望 5", strings.Count(sql, "NOT EXISTS"))
+	}
+	for _, want := range []string{
+		"'page', 0, 'BusinessCategory'",
+		"'catalog:category:create'",
+		"'catalog:category:update'",
+		"'catalog:category:delete'",
+		"WHERE r.code = 'admin'",
+	} {
+		if !strings.Contains(sql, want) {
+			t.Fatalf("缺少 %s：\n%s", want, sql)
+		}
+	}
+	// 标题含单引号时必须转义，否则脚本执行即语法错误。
+	quoted := Spec{Name: "quote", Domain: "business", Title: "it's", API: "/api/quotes", Permission: "business:quote", IDType: "number",
+		Fields: []Field{{Name: "name", Label: "名称", Type: "string", Required: true}}}
+	files, err = renderFiles("frontend", templateData{Spec: quoted, Module: "example.com/shop/backend"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(files[len(files)-1].Data), "'it''s'") {
+		t.Fatal("标题单引号未转义")
 	}
 }
 

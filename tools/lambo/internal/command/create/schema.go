@@ -284,3 +284,6 @@ func jsonValue(value interface{}) string {
 	data, _ := json.Marshal(value)
 	return string(data)
 }
+
+// sqlQuote 生成 PostgreSQL 单引号字符串字面量，标题等用户输入可能含单引号。
+func sqlQuote(value string) string { return "'" + strings.ReplaceAll(value, "'", "''") + "'" }

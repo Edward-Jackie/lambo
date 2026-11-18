@@ -3,6 +3,7 @@ package command
 import (
 	"github.com/Edward-Jackie/lambo/tools/lambo/config"
 	"github.com/Edward-Jackie/lambo/tools/lambo/internal/command/create"
+	"github.com/Edward-Jackie/lambo/tools/lambo/internal/command/db"
 	newproject "github.com/Edward-Jackie/lambo/tools/lambo/internal/command/new"
 	"github.com/Edward-Jackie/lambo/tools/lambo/internal/command/run"
 	"github.com/Edward-Jackie/lambo/tools/lambo/internal/command/upgrade"
@@ -17,7 +18,7 @@ var CmdRoot = &cobra.Command{
 }
 
 func init() {
-	CmdRoot.AddCommand(newproject.CmdNew, create.CmdCreate, run.CmdRun, wire.CmdWire, upgrade.CmdUpgrade)
+	CmdRoot.AddCommand(newproject.CmdNew, create.CmdCreate, db.CmdDB, run.CmdRun, wire.CmdWire, upgrade.CmdUpgrade)
 	wire.CmdWire.AddCommand(wire.CmdWireAll)
 	CmdRoot.CompletionOptions.DisableDefaultCmd = true
 }

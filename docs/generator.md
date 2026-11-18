@@ -13,8 +13,13 @@ CLI 是跨前后端的项目开发工具，独立模块为 `github.com/Edward-Ja
 | `lambo create service category` | 参数与 ID 校验、新增默认值、业务调用 |
 | `lambo create handler category` | 五个 HTTP 接口、统一响应、权限路由注册、操作日志 |
 | `lambo create backend category` | 以上四个组件 |
-| `lambo create frontend category` | Vben Element Plus API、字段配置、列表、详情/编辑弹窗与路由，共 5 个文件 |
-| `lambo create all category` | 后端 4 个文件 + 前端 5 个文件 |
+| `lambo create frontend category` | Vben Element Plus API、字段配置、列表、详情/编辑弹窗与路由，共 5 个文件；另加菜单初始化 SQL 1 个 |
+| `lambo create all category` | 后端 4 个文件 + 前端 5 个文件 + 菜单 SQL 1 个 |
+| `lambo db seed category` | 执行 `backend/internal/<domain>/seed/category.sql`，写入菜单与按钮权限 |
+
+菜单真源是数据库。前端页面生成同时产出 `backend/internal/<domain>/seed/<名称>.sql`：一条 `page` 菜单承载 `:query`，`create`/`update`/`delete` 各生成一条 `button` 菜单，并把四项授权给 `admin` 角色。脚本以 `path`、`permission` 和角色菜单对去重，可重复执行，不覆盖人工调整的授权。未执行该脚本时，新模块接口按权限码拒绝（403），前端按钮因无权限码而隐藏。
+
+`lambo db seed` 依次取 `--dsn`、环境变量 `LAMBO_POSTGRES_DSN`、`backend/config/local.yml` 的 `data.postgres.dsn` 作为连接串，整份脚本在单个事务内以简单协议执行，避免逐句拆分误伤字面量。`--dry-run` 只打印脚本不连库。注意区分：`backend/internal/system/repository/seed/iam.sql` 是首次启动的一次性骨架，由 `InitializeIAM` 内嵌执行；生成模块的 seed 只在显式调用命令时执行，不在启动时自动跑。
 
 通用参数：`--schema <文件>`、`--dry-run`、`--check`、`--root <项目>`、`--tpl-path <模板目录>`。`--dry-run` 与 `--check` 互斥。名称采用小写英文、数字及中间的 `-` 或 `_`，不接受任意输出路径。单个后端层可能引用尚未创建的相邻层；需要完整可编译组件时使用 `create backend` 或 `create all`。
 
@@ -60,7 +65,7 @@ CLI 是跨前后端的项目开发工具，独立模块为 `github.com/Edward-Ja
 
 数字 ID 由数据库生成，限制在 JS 安全整数范围；超过范围的新增事务回滚。字符串 ID 使用 UUID。缺失记录返回 HTTP 404，非法参数返回 400，超过 1 MiB 的请求体返回 413；数据库错误记录到 Zap，响应返回通用 500 信息。响应仍统一为 `{code, data, message}`。
 
-按钮使用 `<前缀>:create`、`:update`、`:delete`、`:query`。需要在后端实际下发这些权限码；生成器不会添加管理员绕过，也不自动写入权限表。路由 `/business/<名称>` 是本地路由起点，动态菜单接入后可引用 `business/<名称>/index.vue` 组件。
+按钮使用 `<前缀>:create`、`:update`、`:delete`、`:query`。生成器不添加管理员绕过，权限码必须由数据库菜单行承载：`lambo db seed` 生成的四条菜单已覆盖这些码，额外动作权限需在菜单管理页补 `button` 菜单。路由 `/business/<名称>` 对应菜单 `path` 与组件 `business/<名称>/index.vue`；Vben 以 `accessMode: 'backend'` 运行，侧边栏与路由完全由 `/api/menu/all` 返回的数据库菜单决定，`router/routes/modules/business/*.ts` 只是生成痕迹，不参与实际路由。
 
 ## 后端装配与数据库
 

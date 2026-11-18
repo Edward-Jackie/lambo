@@ -78,6 +78,8 @@ func renderFiles(kind string, data templateData) ([]outputFile, error) {
 				{"frontend/form.vue.tpl", view + "form.vue"},
 				{"frontend/index.vue.tpl", view + "index.vue"},
 				{"frontend/route.ts.tpl", src + "router/routes/modules/business/" + data.Name + ".ts"},
+				// 菜单真源在数据库，页面生成同时产出幂等 SQL，由 lambo db seed 执行。
+				{"create/menu.sql.tpl", "backend/internal/" + data.Domain + "/seed/" + data.SnakeName() + ".sql"},
 			}
 		} else {
 			paths = [][2]string{{"create/" + current + ".tpl", "backend/internal/" + data.Domain + "/" + current + "/" + data.SnakeName() + ".go"}}
@@ -96,7 +98,7 @@ func renderFiles(kind string, data templateData) ([]outputFile, error) {
 					return nil, fmt.Errorf("读取自定义模板：%w", err)
 				}
 			}
-			t, err := template.New(pair[0]).Funcs(template.FuncMap{"json": jsonValue}).Option("missingkey=error").Parse(string(source))
+			t, err := template.New(pair[0]).Funcs(template.FuncMap{"json": jsonValue, "sql": sqlQuote}).Option("missingkey=error").Parse(string(source))
 			if err != nil {
 				return nil, fmt.Errorf("解析模板 %s：%w", pair[0], err)
 			}

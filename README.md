@@ -45,6 +45,7 @@ lambo create backend category --schema tools/lambo/examples/category.json
 lambo create all category --schema tools/lambo/examples/category.json
 
 # 以下命令由开发者按需执行
+lambo db seed category
 lambo run
 lambo run backend/cmd/server -- -conf config/local.yml
 lambo wire
@@ -55,7 +56,15 @@ lambo upgrade
 
 `create backend` 生成模型与校验类型、GORM 仓储、服务和五个 CRUD 接口；`create all` 在此基础上增加前端产物。注入数据库、迁移表并调用生成处理器的 `RegisterRoutes(router, authorize)`，即可显式接入现有应用。请求与响应和前端 API 对齐，支持分页筛选、零值更新、可选字段清空、只读字段保护及权限拒绝；装配示例见[生成器说明](docs/generator.md)。具体业务规则和按身份的数据范围由业务模块补充。
 
+前端产物同时带出一个菜单脚本 `backend/internal/<domain>/seed/<名称>.sql`。菜单真源在数据库，`lambo db seed <名称>` 才会写入菜单、按钮权限与管理员授权；不执行时该模块接口 403、前端按钮隐藏。DSN 取 `--dsn`、`LAMBO_POSTGRES_DSN` 或 `backend/config/local.yml`。
+
 `run` 默认定位 `backend/`，支持文件热重载及 `--` 后透传应用参数。`wire` 使用固定的 Wire `v0.7.0`，首次执行可能下载工具依赖，无需全局安装 Wire。`new` 只克隆 Lambo 前后端模板并替换两个 Go 模块路径，不覆盖已有目录、不安装依赖。`new` 和 `upgrade` 默认使用公开仓库，因此新增工具需发布后才可从远端获得。
+
+## Docker 部署
+
+部署文件统一位于 [deploy/](deploy/README.md)，包含前后端 Dockerfile、专用构建忽略规则、Compose、Nginx 和配置示例。从仓库根目录执行 `docker compose -f deploy/compose.yaml build` 构建镜像；启动和更新由开发者或运维按部署说明执行。
+
+镜像只打包 Element Plus 应用和 Go 服务，不启动公共 Mock。运行前需提供 PostgreSQL 私有配置；字典与完整权限后台仍在开发，容器健康检查不替代业务验收。
 
 ## 生成安全与开发边界
 
