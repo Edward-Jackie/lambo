@@ -11,9 +11,24 @@ import (
  "github.com/gin-gonic/gin"
  "go.uber.org/zap"
  "{{.Module}}/internal/{{.Domain}}/model"
+ {{if eq .Domain "business"}}sysmodel "{{.Module}}/internal/system/model"{{end}}
  "{{ .Module }}/internal/{{.Domain}}/service"
  "{{ .Module }}/pkg/helper/resp"
 )
+
+// {{.StructName}}MenuRegistration 提供 IAM 校验和后台管理所需的模块元数据。
+func {{.StructName}}MenuRegistration() {{if eq .Domain "business"}}sysmodel{{else}}model{{end}}.MenuRegistration {
+ return {{if eq .Domain "business"}}sysmodel{{else}}model{{end}}.MenuRegistration{
+  Component: {{json (printf "/business/%s/index" .Name)}},
+  Title: {{json .Title}},
+  Permissions: map[string]string{
+   {{.StructName}}PermissionQuery: {{json (printf "查询%s" .Title)}},
+   {{.StructName}}PermissionCreate: {{json (printf "新增%s" .Title)}},
+   {{.StructName}}PermissionUpdate: {{json (printf "编辑%s" .Title)}},
+   {{.StructName}}PermissionDelete: {{json (printf "删除%s" .Title)}},
+  },
+ }
+}
 
 const (
  {{.StructName}}APIPath = {{json .API}}

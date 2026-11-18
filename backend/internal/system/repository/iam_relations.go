@@ -89,7 +89,7 @@ func setRoleMenus(tx *gorm.DB, ctx context.Context, id uint64, menuIDs []uint64)
 	return nil
 }
 
-func validateMenu(tx *gorm.DB, item *model.SystemMenu) error {
+func (r *Repository) validateMenu(tx *gorm.DB, item *model.SystemMenu) error {
 	if math.Trunc(item.ParentId) != item.ParentId || item.ParentId < 0 || math.Trunc(item.Sort) != item.Sort {
 		return iamInvalid("上级菜单和排序必须是有效整数")
 	}
@@ -140,7 +140,7 @@ func validateMenu(tx *gorm.DB, item *model.SystemMenu) error {
 	}
 	code := textValue(item.Permission)
 	if code != "" {
-		if _, ok := model.PermissionCatalog()[code]; !ok {
+		if _, ok := r.menuCatalog.Permissions[code]; !ok {
 			return iamInvalid("请选择已注册的接口权限码")
 		}
 	}
@@ -150,7 +150,7 @@ func validateMenu(tx *gorm.DB, item *model.SystemMenu) error {
 		}
 	}
 	if item.Kind == model.MenuPage {
-		if _, ok := model.PageComponents()[textValue(item.Component)]; !ok {
+		if _, ok := r.menuCatalog.Components[textValue(item.Component)]; !ok {
 			return iamInvalid("请选择已注册的页面组件")
 		}
 		if code == "" || !strings.HasSuffix(code, ":query") {

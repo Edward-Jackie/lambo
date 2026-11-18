@@ -56,7 +56,7 @@ func (r *systemMenuRepository) GetSystemMenu(ctx context.Context, id uint64) (*m
 
 func (r *systemMenuRepository) CreateSystemMenu(ctx context.Context, item *model.SystemMenu) error {
 	return r.iamWrite(ctx, func(tx *gorm.DB) error {
-		if err := validateMenu(tx, item); err != nil {
+		if err := r.validateMenu(tx, item); err != nil {
 			return err
 		}
 		if err := checkScope(tx, ctx, []model.SystemMenu{*item}); err != nil {
@@ -98,7 +98,7 @@ func (r *systemMenuRepository) UpdateSystemMenu(ctx context.Context, id uint64, 
 		if err := tx.Where(clause.Eq{Column: "id", Value: id}).First(&item).Error; err != nil {
 			return err
 		}
-		if err := validateMenu(tx, &item); err != nil {
+		if err := r.validateMenu(tx, &item); err != nil {
 			return err
 		}
 		if err := checkScope(tx, ctx, []model.SystemMenu{item}); err != nil {

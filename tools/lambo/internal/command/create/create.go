@@ -70,6 +70,7 @@ func runCreate(cmd *cobra.Command, kind, name string) error {
 		fmt.Fprintln(cmd.OutOrStdout(), "生成完成。已有手写文件不会覆盖。")
 		if kind == "backend" || kind == "all" {
 			fmt.Fprintf(cmd.OutOrStdout(), "后端：已生成到 backend/internal/%s/{model,repository,service,handler}；注入 GORM 数据库并迁移 model.%s；装配后调用 %sHandler.RegisterRoutes(router, authorize) 注册 CRUD 与权限检查。\n", spec.Domain, spec.StructName(), spec.LowerName())
+			fmt.Fprintf(cmd.OutOrStdout(), "菜单注册：在 Wire 的 provideMenuCatalog 中加入 %sMenuRegistration()。\n", spec.StructName())
 		}
 		if kind == "frontend" || kind == "all" {
 			fmt.Fprintf(cmd.OutOrStdout(), "前端路由：/business/%s；接口契约：%s。\n", spec.Name, spec.API)

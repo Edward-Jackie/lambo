@@ -20,6 +20,7 @@ var ServerSet = wire.NewSet(provideEngine)
 
 var RepositorySet = wire.NewSet(
 	provideDb,
+	provideMenuCatalog,
 	sysrepository.NewRepository,
 	sysrepository.NewAuthRepository,
 	sysrepository.NewSystemUserRepository,

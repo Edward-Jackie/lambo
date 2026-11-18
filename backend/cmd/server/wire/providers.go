@@ -44,6 +44,11 @@ func provideEngine(
 	return r, nil
 }
 
+// provideMenuCatalog 汇集已装配模块的页面和权限定义。
+func provideMenuCatalog() sysmodel.MenuCatalog {
+	return sysmodel.NewMenuCatalog(bizhandler.CategoryMenuRegistration())
+}
+
 // provideDb 建立连接，并按两区表清单执行自动迁移；迁移清单只出现在装配层。
 func provideDb(conf *viper.Viper, logger *log.Logger) (*gorm.DB, func(), error) {
 	db, cleanup, err := platformdatabase.NewDb(conf, logger)
@@ -56,7 +61,7 @@ func provideDb(conf *viper.Viper, logger *log.Logger) (*gorm.DB, func(), error) 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	if err := platformdatabase.Migrate(ctx, db,
-		&sysmodel.Account{}, &sysmodel.Session{}, &sysmodel.SystemUser{}, &sysmodel.SystemRole{}, &sysmodel.SystemMenu{},
+		&sysmodel.Session{}, &sysmodel.SystemUser{}, &sysmodel.SystemRole{}, &sysmodel.SystemMenu{},
 		&sysmodel.AccountRole{}, &sysmodel.RoleMenu{}, &sysmodel.IAMMigration{},
 		&bizmodel.Category{},
 	); err != nil {
