@@ -1,6 +1,7 @@
 package db
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"os"
@@ -12,6 +13,7 @@ import (
 	"github.com/duke-git/lancet/v2/strutil"
 	"github.com/jackc/pgx/v5"
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v3"
 )
 
 var rootPath, dsnFlag string
@@ -61,11 +63,14 @@ func runSeed(cmd *cobra.Command, name string) error {
 		fmt.Fprintf(out, "%s\n", script)
 		return nil
 	}
+	if bytes.HasPrefix(script, []byte("-- 由 Lambo 生成：")) {
+		return fmt.Errorf("%s 使用旧版菜单种子，请用新版模板更新后再执行，避免恢复已撤销的授权", file)
+	}
 	dsn, err := resolveDSN(root)
 	if err != nil {
 		return err
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(cmd.Context(), 30*time.Second)
 	defer cancel()
 	conn, err := pgx.Connect(ctx, dsn)
 	if err != nil {
@@ -73,17 +78,13 @@ func runSeed(cmd *cobra.Command, name string) error {
 	}
 	defer func() { _ = conn.Close(context.Background()) }()
 	// 整份脚本按简单协议一次执行，避免逐句拆分误伤含分号的字面量。
-	if _, err := conn.Exec(ctx, "BEGIN"); err != nil {
-		return fmt.Errorf("开启事务：%w", err)
+	if err := pgx.BeginFunc(ctx, conn, func(tx pgx.Tx) error {
+		_, err := tx.Exec(ctx, string(script), pgx.QueryExecModeSimpleProtocol)
+		return err
+	}); err != nil {
+		return fmt.Errorf("应用菜单种子 %s：%w", filepath.Base(file), err)
 	}
-	if _, err := conn.Exec(ctx, string(script), pgx.QueryExecModeSimpleProtocol); err != nil {
-		_, _ = conn.Exec(context.Background(), "ROLLBACK")
-		return fmt.Errorf("执行 %s：%w", filepath.Base(file), err)
-	}
-	if _, err := conn.Exec(ctx, "COMMIT"); err != nil {
-		return fmt.Errorf("提交事务：%w", err)
-	}
-	fmt.Fprintln(out, "菜单已写入。已登录会话的菜单在下次刷新路由时生效。")
+	fmt.Fprintln(out, "菜单种子执行完成。新增授权将在重新登录后显示。")
 	return nil
 }
 
@@ -110,17 +111,22 @@ func resolveDSN(root string) (string, error) {
 	}
 	path := filepath.Join(root, "backend", "config", "local.yml")
 	data, err := os.ReadFile(path)
+	if err != nil && !os.IsNotExist(err) {
+		return "", fmt.Errorf("读取数据库配置 %s：%w", path, err)
+	}
 	if err == nil {
-		for _, line := range strings.Split(string(data), "\n") {
-			trimmed := strings.TrimSpace(line)
-			if !strings.HasPrefix(trimmed, "dsn:") {
-				continue
-			}
-			value := strings.TrimSpace(strings.TrimPrefix(trimmed, "dsn:"))
-			value = strings.Trim(value, `"'`)
-			if value != "" && !strings.HasPrefix(value, "#") {
-				return value, nil
-			}
+		var conf struct {
+			Data struct {
+				Postgres struct {
+					DSN string `yaml:"dsn"`
+				} `yaml:"postgres"`
+			} `yaml:"data"`
+		}
+		if err := yaml.Unmarshal(data, &conf); err != nil {
+			return "", fmt.Errorf("无法解析 %s 的 YAML 数据库配置", path)
+		}
+		if dsn := strings.TrimSpace(conf.Data.Postgres.DSN); dsn != "" {
+			return dsn, nil
 		}
 	}
 	return "", fmt.Errorf("未提供数据库连接：使用 --dsn、设置 LAMBO_POSTGRES_DSN，或填写 %s 的 data.postgres.dsn", path)
