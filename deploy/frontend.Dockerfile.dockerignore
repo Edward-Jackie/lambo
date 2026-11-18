@@ -1,0 +1,25 @@
+# 只发送前端源码与公开部署配置。
+**
+!LICENSE
+!frontend/
+!frontend/**
+!deploy/
+deploy/*
+!deploy/frontend.env
+!deploy/nginx.conf
+**/node_modules
+**/dist
+**/dist.zip
+**/.git
+**/.idea
+**/.turbo
+**/.artifacts
+**/.tmp
+**/.DS_Store
+**/coverage
+**/*.log
+**/*.pem
+**/*.key
+**/.env*
+!frontend/apps/web-ele/.env
+!frontend/apps/web-ele/.env.production

@@ -22,3 +22,10 @@ backend/storage/
 # 本地验证与临时产物
 .artifacts/
 .tmp/
+
+# AI 工具的项目数据与本地记忆，不随仓库分发
+.workbuddy/
+
+# 自定义容器配置
+deploy/*.local.yml
+deploy/*.local.yaml

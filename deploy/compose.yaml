@@ -1,0 +1,60 @@
+name: lambo
+
+services:
+  backend:
+    image: ${BACKEND_IMAGE:-lambo-backend:local}
+    build:
+      context: ..
+      dockerfile: deploy/backend.Dockerfile
+    restart: unless-stopped
+    init: true
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    environment:
+      APP_CONF: /app/config/container.yml
+      TZ: Asia/Shanghai
+    expose: ["8000"]
+    volumes:
+      - type: bind
+        source: ${BACKEND_CONFIG_FILE:-./backend.yml}
+        target: /app/config/container.yml
+        read_only: true
+        bind:
+          create_host_path: false
+      - backend-logs:/app/storage/logs
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=16m,mode=1777
+    stop_grace_period: 15s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+
+  frontend:
+    image: ${FRONTEND_IMAGE:-lambo-frontend:local}
+    build:
+      context: ..
+      dockerfile: deploy/frontend.Dockerfile
+    restart: unless-stopped
+    init: true
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "${HTTP_BIND:-127.0.0.1}:${HTTP_PORT:-8080}:8080"
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m,mode=1777
+    stop_grace_period: 15s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+
+volumes:
+  backend-logs:

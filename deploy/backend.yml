@@ -1,0 +1,23 @@
+# 容器端口固定为 8000；外部入口端口由 Compose 配置。
+env: prod
+http:
+  port: 8000
+data:
+  postgres:
+    # 在 backend.local.yml 中提供连接，不将凭据放入公开配置。
+    dsn: ""
+  auto_migrate: false
+bootstrap:
+  enabled: false
+  admin_username: admin
+  admin_password: ""
+  reader_username: reader
+  reader_password: ""
+log:
+  log_level: info
+  encoding: json
+  log_file_name: /app/storage/logs/server.log
+  max_backups: 5
+  max_age: 7
+  max_size: 20
+  compress: true
