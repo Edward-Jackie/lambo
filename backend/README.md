@@ -2,16 +2,7 @@
 
 模块：`github.com/Edward-Jackie/lambo/backend`。沿用 Gin、GORM、Viper、Zap 和 Wire 的显式分层，源自 Nunu Basic；原版权保留于 [LICENSE](LICENSE)。
 
-统一命令从项目根目录安装，详见 [根目录 README](../README.md) 和 [代码生成器说明](../docs/generator.md)：
-
-```bash
-# 在仓库根目录执行
-go -C tools/lambo install ./cmd/lambo
-lambo create backend category --schema tools/lambo/examples/category.json
-lambo create all category --schema tools/lambo/examples/category.json
-lambo wire
-lambo run
-```
+安装、开发流程和常用命令见 [项目 README](../README.md)。字段与产物契约见 [代码生成器说明](../docs/generator.md)。
 
 后端组件按 `internal/<域>/model → repository → service → handler` 分层生成，域为 `business`（业务，默认）或 `system`（系统）。包含字段校验、分页/详情/新增/编辑/删除及权限路由注册方法。连接数据库并迁移表后，显式装配或加入 Wire，再调用处理器的 `RegisterRoutes(router, authorize)`；具体步骤见生成器说明。主服务已通过 Wire 装配分类 CRUD、PostgreSQL、真实账号会话及权限校验；旧用户示例已删除。其他业务模块和数据范围仍需显式接入。
 
@@ -27,7 +18,7 @@ lambo run
 
 所有初始化项也支持环境变量：`LAMBO_AUTO_MIGRATE`、`LAMBO_BOOTSTRAP_ENABLED`、`LAMBO_ADMIN_USERNAME`、`LAMBO_ADMIN_PASSWORD`、`LAMBO_READER_USERNAME`、`LAMBO_READER_PASSWORD`。例如按需在 `backend/` 执行 `APP_CONF=/绝对路径/私有配置.json go run ./cmd/server`；程序会在连接、迁移、账号初始化和路由装配成功后报告就绪。
 
-角色与菜单骨架的初始化数据在 `internal/system/repository/seed/iam.sql`，由程序嵌入并在首次初始化时执行一次；按钮由权限目录派生，管理员密码来自 bootstrap 配置。手工部署时可直接将该脚本作为初始化数据参考。
+程序首次启动时执行嵌入的 IAM 骨架种子，并根据权限目录生成按钮和授权。手工初始化使用 [docs/init.sql](../docs/init.sql)，可在表结构已存在的新库中先装入角色和菜单骨架，再由首次启动完成账号、按钮及授权。操作步骤见 [项目 README](../README.md#使用-initsql-初始化基础数据)。
 
 账号密码使用 bcrypt；随机访问令牌有效期 8 小时，数据库只保存 SHA-256 摘要，退出登录立即撤销。每次请求检查会话有效期与账号启用状态。用户支持多个角色，角色配置目录、页面和按钮权限，权限取并集；菜单及其上级停用后不再授权。权限分配读取数据库，接口权限码常量只声明所需权限。前端按钮和后端路由使用同一组权限码。
 

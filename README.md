@@ -1,98 +1,72 @@
 # Lambo
 
-基于 Vben Admin + Gin/GORM 的 Go / Vue 业务脚手架，后端从 Nunu Basic 演进。对外开发工具统一使用 **`lambo`**。
+基于 Vben Admin、Element Plus 和 Nunu Basic 的 Go / Vue 业务脚手架。内置 PostgreSQL、账号会话、角色与菜单管理，以及接入真实接口的分类 CRUD。使用 `lambo` 生成前后端起始代码、管理菜单种子、生成 Wire 装配和运行后端热重载。
 
-**当前能力：** CLI 新建项目、后端 CRUD 生成、Vben Element Plus 前端代码生成与菜单初始化脚本、后端热重载、Wire 生成与工具升级；`deploy/` 提供前后端 Docker 构建与运行配置。生成的分类 CRUD 已接入主服务和 PostgreSQL，前端已切换真实登录、动态菜单与权限接口，并完成页面增删改查。用户、角色、菜单及按钮权限已支持数据库配置；部门数据范围、字典后台、生产迁移和业务状态流转仍按 [plan.md](plan.md) 开发。
+## 本地使用
 
-## 安装本地命令
-
-需要 Go `1.25.8+`，本次使用 Go `1.27.1` 验证。在仓库根目录执行（`-C` 指定 CLI 所在模块）：
+需要 Go `1.25.8+`、PostgreSQL、Node.js `^22.18.0 || ^24.12.0` 和 `pnpm@11.16.0`。以下命令从仓库根目录执行。
 
 ```bash
 go -C tools/lambo install ./cmd/lambo
 lambo --help
+(cd frontend && pnpm install --frozen-lockfile)
 ```
 
-确保 `go env GOBIN` 指定的目录在 `PATH` 中；未设置时使用 `$(go env GOPATH)/bin`。也可以不安装，从仓库根目录使用 `go -C tools/lambo run ./cmd/lambo create frontend category`。
+将 `go env GOBIN` 指向的目录加入 `PATH`。未指定 `GOBIN` 时使用 `$(go env GOPATH)/bin`。
 
-CLI 已迁至项目级 `tools/lambo/`。已有本地命令请先按上面的安装命令重新安装，使后续 `lambo upgrade` 使用新的模块地址。
-
-## 生成前端业务代码
+1. 创建本地开发数据库，将 [后端开发配置](backend/config/local.yml) 复制到仓库外的私有路径，填写 `data.postgres.dsn`。首次启动启用 `data.auto_migrate` 和 `bootstrap.enabled`，填写管理员和只读账号的密码，每个密码为 12–72 字节。
+2. 在两个终端分别运行后端和前端。后端默认端口为 8000，前端默认地址为 [http://localhost:5777](http://localhost:5777)，开发代理转发 `/api`。
+3. 使用配置中指定的账号登录。完成初始化后关闭 `bootstrap.enabled`。数据库配置、环境变量和 HTTP 接口见 [后端说明](backend/README.md)。
 
 ```bash
-# 先预览，不写入文件
-lambo create frontend category --schema tools/lambo/examples/category.json --dry-run
-
-# 生成 API、表单配置、列表、详情/编辑弹窗与路由
-lambo create frontend category --schema tools/lambo/examples/category.json
-
-# 校验产物一致性，不写文件
-lambo create frontend category --schema tools/lambo/examples/category.json --check
+APP_CONF=/绝对路径/lambo.local.yml lambo run
+(cd frontend && pnpm --filter @vben/web-ele run dev)
 ```
 
-生成位置为 `frontend/apps/web-ele/src/` 下的 `api/business/`、`views/business/` 和 `router/routes/modules/business/`。复用 Vben 请求客户端、表格、表单、弹窗、图标及 Element Plus 组件，支持分页、字段筛选、选项回显、表单校验、只读字段、删除确认、加载失败和保存后刷新。
+### 使用 init.sql 初始化基础数据
 
-不传 `--schema` 时生成一个包含「名称」字段的起始页面；字段定义和接口约定见 [生成器说明](docs/generator.md)。这是一份开发期输入格式，字典后台与业务枚举的最终发布机制仍待确定。
-
-## 其他命令
+本地空库默认由首次启动完成建表、账号和 IAM 初始化。需要手工装入基础数据时，在 **已建表的新库** 中执行 [docs/init.sql](docs/init.sql)，再按上面的账号配置启动后端。
 
 ```bash
-lambo create model category
-lambo create repository category
-lambo create service category
-lambo create handler category
-lambo create backend category --schema tools/lambo/examples/category.json
-lambo create all category --schema tools/lambo/examples/category.json
-
-# 以下命令由开发者按需执行
-lambo db seed category
-lambo run
-lambo run backend/cmd/server -- -conf config/local.yml
-lambo wire
-lambo wire all
-lambo new shop --module github.com/example/shop
-lambo upgrade
+psql -X -v ON_ERROR_STOP=1 -d lambo_dev -f docs/init.sql
 ```
 
-`create backend` 生成模型与校验类型、GORM 仓储、服务和五个 CRUD 接口；`create all` 在此基础上增加前端产物。注入数据库、迁移表并调用生成处理器的 `RegisterRoutes(router, authorize)`，即可显式接入现有应用。请求与响应和前端 API 对齐，支持分页筛选、零值更新、可选字段清空、只读字段保护及权限拒绝；装配示例见[生成器说明](docs/generator.md)。具体业务规则和按身份的数据范围由业务模块补充。
+`init.sql` 写入管理员与只读角色以及目录、页面骨架。首次启动继续创建账号、按钮和授权。脚本有事务锁和安装标记，对已完成基础初始化的库重复执行会保留数据。表结构迁移与业务模块菜单分别走各自的入口，详见 [IAM 说明](docs/iam.md)。
 
-前端产物同时带出一个菜单脚本 `backend/internal/<domain>/seed/<名称>.sql`。菜单真源在数据库，`lambo db seed <名称>` 才会写入菜单、按钮权限与管理员授权；不执行时该模块接口 403、前端按钮隐藏。DSN 取 `--dsn`、`LAMBO_POSTGRES_DSN` 或 `backend/config/local.yml`。
+## 开发流程
 
-`run` 默认定位 `backend/`，支持文件热重载及 `--` 后透传应用参数。`wire` 使用固定的 Wire `v0.7.0`，首次执行可能下载工具依赖，无需全局安装 Wire。`new` 只克隆 Lambo 前后端模板并替换两个 Go 模块路径，不覆盖已有目录、不安装依赖。`new` 和 `upgrade` 默认使用公开仓库，因此新增工具需发布后才可从远端获得。
+1. **定义并验收需求**。确认角色、成功与失败场景，梳理业务流程。定义 Domain 契约中的字段、枚举、动作、状态、权限和数据范围。派生字段 Schema，审核通过后冻结第一版。完整检查标准见 [开发规范](plan.md#121-流程与阶段审核)。
+2. **预览并生成**。先运行 `lambo create all <模块> --schema <字段文件> --dry-run`，确认产物和修改范围后去掉 `--dry-run`。可分别使用 `create backend`、`create frontend` 或单层命令。字段格式和选项见 [生成器说明](docs/generator.md)，`--check` 可核对产物与模板的一致性。
+3. **接入真实业务**。补齐领域规则和数据范围，在 Wire 的迁移清单和会话路由中加入模块，并在 `provideMenuCatalog` 注册生成的 `<模块>MenuRegistration()`。运行 `lambo wire` 更新装配。
+4. **安装业务菜单**。运行 `lambo db seed <模块> --dry-run` 查看生成的第三版种子，再执行 `lambo db seed <模块>`。命令使用当前项目后端的注册目录校验，在同一事务安装菜单、按钮和默认管理员授权。对安装历史不完整的旧库，仅在核实模块从未安装后使用 `--new`。DSN 依次来自 `--dsn`、`LAMBO_POSTGRES_DSN`、`backend/config/local.yml` 中的 `data.postgres.dsn`。
+5. **验证并交付**。运行下列验证，在真实开发库和页面验证操作成功、越权拒绝与持久化。生成器产物有手写修改时先预览再合并。完成后记录验证证据及剩余边界，更新相关 Codemap 源码锚点。
 
-## Docker 部署
-
-部署文件统一位于 [deploy/](deploy/README.md)，包含前后端 Dockerfile、专用构建忽略规则、Compose、Nginx 和配置示例。从仓库根目录执行 `docker compose -f deploy/compose.yaml build` 构建镜像；启动和更新由开发者或运维按部署说明执行。
-
-镜像只打包 Element Plus 应用和 Go 服务，不启动公共 Mock。运行前需提供 PostgreSQL 私有配置；字典与完整权限后台仍在开发，容器健康检查不替代业务验收。
-
-## 生成安全与开发边界
-
-- 相同内容重复生成不改动文件；有不同内容时整批停止，不提供强制覆盖。可先 `--dry-run`，再手动合并。自动格式化过的起始代码也可能与原模板产生差异，属于应保留的修改。
-- 拒绝非法名称、重复字段、类型不匹配、目录越界和符号链接目标。`--check` 对缺失或有差异的文件返回非零状态。
-- `--tpl-path` 支持按相对路径替换部分模板；自定义模板和字段定义属于受信任的本地开发输入。
-- 后端模块为 `github.com/Edward-Jackie/lambo/backend`；CLI 位于 `tools/lambo/`，保留独立 Go 模块，工具依赖不进入业务服务。
-- 前端使用 Element Plus 作为首套业务应用；暂时保留其他上游应用，不维护其生成模板。
-- 前端要求 Node.js `^22.18.0 || ^24.12.0`、pnpm `>=11.0.0`，锁定 `pnpm@11.16.0`。在 `frontend/` 内执行 `pnpm install --frozen-lockfile`。
-- 主服务已装配 PostgreSQL、账号会话和分类接口；继承的用户示例未作为公开业务路由注册。公开配置不含凭据，运行配置与初始化说明见 [后端 README](backend/README.md)。前端按钮隐藏不代替后端鉴权。
-
-## 目录与文档
-
-```text
-lambo/
-├── backend/                        # Go 业务服务
-├── tools/lambo/                    # 跨前后端的独立 CLI 模块：命令、配置、模板、字段示例
-├── docs/                           # 使用说明和架构决策
-├── frontend/                       # Vben 多包结构，业务首选 web-ele
-├── deploy/                         # 部署配置与脚本
-├── .skills/                        # 项目专用 AI 技能
-├── AGENTS.md                       # 工程约定
-├── README.md
-├── LICENSE
-├── THIRD_PARTY_NOTICES.md
-└── plan.md                         # 功能阶段和验收
+```bash
+go -C backend test ./...
+go -C backend vet ./...
+go -C backend build ./...
+go -C tools/lambo test ./...
+(cd frontend && pnpm --filter @vben/web-ele run typecheck)
+(cd frontend && pnpm --filter @vben/web-ele run build)
 ```
 
-[工程约定](AGENTS.md) · [技术决策](docs/architecture/0001-foundation.md) · [上游来源与版权](THIRD_PARTY_NOTICES.md)
+### 常用命令
 
-[MIT](LICENSE)。保留 Vben、Nunu 和其他依赖的原版权声明。
+| 命令 | 用途 |
+| --- | --- |
+| `lambo new shop --module github.com/example/shop` | 拉取 Lambo 模板并替换两个 Go 模块路径 |
+| `lambo create all category --schema tools/lambo/examples/category.json --check` | 检查现有分类模块的生成产物 |
+| `lambo create handler <模块>` | 只生成后端处理器 |
+| `lambo run backend/cmd/server -- -conf config/local.yml` | 运行热重载并透传后端配置参数 |
+| `lambo wire all` | 用固定版本的 Wire 更新后端装配 |
+| `lambo upgrade` | 更新 CLI，业务项目仍由自己的仓库维护 |
+
+## 部署与项目文档
+
+- [Docker 部署](deploy/README.md) 包含镜像构建、外部 PostgreSQL 配置、Compose 运行与验证边界。
+- [工程约定](AGENTS.md) 描述代码边界和验收规则。[架构说明](docs/architecture/0001-foundation.md) 记录技术决策。
+- [项目计划](plan.md) 记录阶段进度与验收。部门数据范围、动态字典、业务状态流转和生产版本化迁移仍在计划中。
+
+主要目录为 `backend/` 业务服务、`frontend/` 前端工作区、`tools/lambo/` CLI 与模板、`deploy/` 部署配置和 `docs/` 技术文档。
+
+[MIT 许可证](LICENSE) · [上游来源与版权](THIRD_PARTY_NOTICES.md)
