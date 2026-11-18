@@ -55,7 +55,7 @@ func (r *AuthRepository) InitializeIAM(ctx context.Context) error {
 		}
 		for _, page := range pages {
 			prefix := strings.TrimSuffix(textValue(page.Permission), ":query")
-			for code, label := range model.PermissionCatalog() {
+			for code, label := range r.menuCatalog.Permissions {
 				if !strings.HasPrefix(code, prefix+":") || strings.HasSuffix(code, ":query") {
 					continue
 				}
@@ -147,5 +147,5 @@ func (r *AuthRepository) ManagementOptions(ctx context.Context) (map[string]inte
 	if err != nil {
 		return nil, err
 	}
-	return map[string]interface{}{"roles": roles, "menus": menus, "permissions": model.PermissionCatalog(), "components": model.PageComponents()}, nil
+	return map[string]interface{}{"roles": roles, "menus": menus, "permissions": r.menuCatalog.Permissions, "components": r.menuCatalog.Components}, nil
 }

@@ -27,7 +27,8 @@ func NewWire(viperViper *viper.Viper, logger *log.Logger) (*gin.Engine, func(), 
 	if err != nil {
 		return nil, nil, err
 	}
-	repositoryRepository := repository.NewRepository(logger, db)
+	menuCatalog := provideMenuCatalog()
+	repositoryRepository := repository.NewRepository(logger, db, menuCatalog)
 	authRepository := repository.NewAuthRepository(repositoryRepository)
 	authService, err := service.NewAuthService(authRepository, viperViper)
 	if err != nil {
@@ -66,7 +67,8 @@ func NewWire(viperViper *viper.Viper, logger *log.Logger) (*gin.Engine, func(), 
 var ServerSet = wire.NewSet(provideEngine)
 
 var RepositorySet = wire.NewSet(
-	provideDb, repository.NewRepository, repository.NewAuthRepository, repository.NewSystemUserRepository, repository.NewSystemRoleRepository, repository.NewSystemMenuRepository, repository2.NewRepository, repository2.NewCategoryRepository,
+	provideDb,
+	provideMenuCatalog, repository.NewRepository, repository.NewAuthRepository, repository.NewSystemUserRepository, repository.NewSystemRoleRepository, repository.NewSystemMenuRepository, repository2.NewRepository, repository2.NewCategoryRepository,
 )
 
 var ServiceSet = wire.NewSet(service.NewService, service.NewAuthService, service.NewSystemUserService, service.NewSystemRoleService, service.NewSystemMenuService, service2.NewService, service2.NewCategoryService)

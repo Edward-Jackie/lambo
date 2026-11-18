@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/Edward-Jackie/lambo/backend/internal/business/model"
 	"github.com/Edward-Jackie/lambo/backend/internal/business/service"
+	sysmodel "github.com/Edward-Jackie/lambo/backend/internal/system/model"
 	"github.com/Edward-Jackie/lambo/backend/pkg/helper/resp"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -14,6 +15,20 @@ import (
 	"net/http"
 	"strconv"
 )
+
+// CategoryMenuRegistration 提供 IAM 校验和后台管理所需的模块元数据。
+func CategoryMenuRegistration() sysmodel.MenuRegistration {
+	return sysmodel.MenuRegistration{
+		Component: "/business/category/index",
+		Title:     "分类管理",
+		Permissions: map[string]string{
+			CategoryPermissionQuery:  "查询分类管理",
+			CategoryPermissionCreate: "新增分类管理",
+			CategoryPermissionUpdate: "编辑分类管理",
+			CategoryPermissionDelete: "删除分类管理",
+		},
+	}
+}
 
 const (
 	CategoryAPIPath          = "/api/categories"

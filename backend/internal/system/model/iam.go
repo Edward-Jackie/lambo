@@ -44,6 +44,31 @@ func PageComponents() map[string]string {
 	return map[string]string{"/business/category/index": "分类管理", "/business/system-user/index": "用户管理", "/business/system-role/index": "角色管理", "/business/system-menu/index": "菜单管理"}
 }
 
+// MenuRegistration 声明接入应用的页面组件与接口权限，授权关系仍由 IAM 管理。
+type MenuRegistration struct {
+	Component   string
+	Title       string
+	Permissions map[string]string
+}
+
+type MenuCatalog struct {
+	Permissions map[string]string
+	Components  map[string]string
+}
+
+func NewMenuCatalog(modules ...MenuRegistration) MenuCatalog {
+	catalog := MenuCatalog{Permissions: PermissionCatalog(), Components: PageComponents()}
+	for _, module := range modules {
+		catalog.Components[module.Component] = module.Title
+		for code, label := range module.Permissions {
+			if _, exists := catalog.Permissions[code]; !exists {
+				catalog.Permissions[code] = label
+			}
+		}
+	}
+	return catalog
+}
+
 func ManagementCodes() []string {
 	return []string{PermissionUserQuery, PermissionUserCreate, PermissionUserUpdate, PermissionUserDelete, PermissionUserPassword, PermissionRoleQuery, PermissionRoleCreate, PermissionRoleUpdate, PermissionRoleDelete, PermissionMenuQuery, PermissionMenuCreate, PermissionMenuUpdate, PermissionMenuDelete}
 }
