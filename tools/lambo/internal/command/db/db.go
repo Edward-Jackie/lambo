@@ -119,19 +119,41 @@ func resolveDSN(root string) (string, error) {
 		return "", fmt.Errorf("读取数据库配置 %s：%w", path, err)
 	}
 	if err == nil {
-		var conf struct {
-			Data struct {
-				Postgres struct {
-					DSN string `yaml:"dsn"`
-				} `yaml:"postgres"`
-			} `yaml:"data"`
-		}
+		var conf map[string]interface{}
 		if err := yaml.Unmarshal(data, &conf); err != nil {
 			return "", fmt.Errorf("无法解析 %s 的 YAML 数据库配置", path)
 		}
-		if dsn := strings.TrimSpace(conf.Data.Postgres.DSN); dsn != "" {
+		value, err := lookupConfigKey(conf, "data", "postgres", "dsn")
+		if err != nil {
+			return "", fmt.Errorf("读取数据库配置 %s：%w", path, err)
+		}
+		rawDSN, _ := value.(string)
+		if dsn := strings.TrimSpace(rawDSN); dsn != "" {
 			return dsn, nil
 		}
 	}
 	return "", fmt.Errorf("未提供数据库连接：使用 --dsn、设置 LAMBO_POSTGRES_DSN，或填写 %s 的 data.postgres.dsn", path)
+}
+
+// 后端 Viper 按大小写不敏感的路径取值。存在多个同名键时拒绝选择连接串。
+func lookupConfigKey(root map[string]interface{}, keys ...string) (interface{}, error) {
+	var value interface{} = root
+	for _, key := range keys {
+		entries, ok := value.(map[string]interface{})
+		if !ok {
+			return nil, nil
+		}
+		found := false
+		value = nil
+		for name, entry := range entries {
+			if !strings.EqualFold(name, key) {
+				continue
+			}
+			if found {
+				return nil, fmt.Errorf("配置键 %s 有重复的大小写形式", key)
+			}
+			value, found = entry, true
+		}
+	}
+	return value, nil
 }
