@@ -15,11 +15,11 @@ CLI 是跨前后端的项目开发工具，独立模块为 `github.com/Edward-Ja
 | `lambo create backend category` | 以上四个组件 |
 | `lambo create frontend category` | Vben Element Plus API、字段配置、列表、详情/编辑弹窗与路由，共 5 个文件；另加菜单初始化 SQL 1 个 |
 | `lambo create all category` | 后端 4 个文件 + 前端 5 个文件 + 菜单 SQL 1 个 |
-| `lambo db seed category` | 执行 `backend/internal/<domain>/seed/category.sql`，写入菜单与按钮权限 |
+| `lambo db seed category` | 读取第三版种子定义，通过后端 IAM 安装菜单与按钮权限 |
 
-菜单真源是数据库。前端页面生成同时产出 `backend/internal/<domain>/seed/<名称>.sql`：一条 `page` 菜单承载 `:query`，`create`/`update`/`delete` 各生成一条 `button` 菜单，并把四项授权给 `admin` 角色。脚本以 `path`、`permission` 和角色菜单对去重，可重复执行，不覆盖人工调整的授权。未执行该脚本时，新模块接口按权限码拒绝（403），前端按钮因无权限码而隐藏。
+菜单真源是数据库。前端生成同时产出 `backend/internal/<domain>/seed/<名称>.sql`，其中保存第三版种子定义和 SQL 预览。首次安装创建一条 `:query` 页面菜单和三条操作按钮，并将四项权限授权给 `admin`。已识别的安装保留现有菜单和授权，冲突修正后可重试。升级旧版种子时，先在空目录预览新版产物，再合并到现有项目。
 
-`lambo db seed` 依次取 `--dsn`、环境变量 `LAMBO_POSTGRES_DSN`、`backend/config/local.yml` 的 `data.postgres.dsn` 作为连接串，整份脚本在单个事务内以简单协议执行，避免逐句拆分误伤字面量。`--dry-run` 只打印脚本不连库。注意区分：`backend/internal/system/repository/seed/iam.sql` 是首次启动的一次性骨架，由 `InitializeIAM` 内嵌执行；生成模块的 seed 只在显式调用命令时执行，不在启动时自动跑。
+`lambo db seed` 依次读取 `--dsn`、环境变量 `LAMBO_POSTGRES_DSN` 和 `backend/config/local.yml` 的 `data.postgres.dsn`，YAML 键兼容大小写。命令借助 Go 工具链运行当前项目后端的一次性 IAM 运维入口，使用该版本的注册目录完成校验和写入。`--dry-run` 只显示种子文件。旧库缺少安装历史时，仅在核实模块从未安装后使用 `--new`。系统 IAM 骨架仍由 `InitializeIAM` 在首次启动时内嵌执行。
 
 通用参数：`--schema <文件>`、`--dry-run`、`--check`、`--root <项目>`、`--tpl-path <模板目录>`。`--dry-run` 与 `--check` 互斥。名称采用小写英文、数字及中间的 `-` 或 `_`，不接受任意输出路径。单个后端层可能引用尚未创建的相邻层；需要完整可编译组件时使用 `create backend` 或 `create all`。
 
@@ -92,7 +92,7 @@ if err := categoryHandler.RegisterRoutes(router, authorize); err != nil {
 
 前端 `web-ele` 当前已关闭 Mock，登录、账号信息、权限码、菜单和分类均使用真实后端。开发环境 API baseURL 为 `/`，Vite 将 `/api` 原样代理到 `http://127.0.0.1:8000`；反向代理也需保留该路径。字段定义中的 `api` 是完整路径，请求为 `/api/categories`，不要重复添加 `/api` 或移除后端所需的前缀。需要直接连接其他后端时，可在 `.env.development.local` 设置 `VITE_GLOB_API_URL` 为对应 origin。
 
-生成器不改写已有 HTTP/Wire 手写文件；新模块仍需像分类一样显式加入迁移、Wire 和受会话保护的路由组，并授予所需权限码。当前用户、角色、目录/页面/按钮授权已通过数据库配置，管理模块使用生成基线扩展，见 [IAM 契约](iam.md)。按部门的数据范围、计算字段和状态流转仍需接入具体业务规则。
+新模块需要显式加入迁移、Wire 和受会话保护的路由组。在 Wire 的 `provideMenuCatalog` 中加入该模块生成的 `<模块>MenuRegistration()`，再使用同一版本的后端源码运行菜单种子。当前用户、角色、目录/页面/按钮授权通过数据库配置，管理模块使用生成基线扩展，见 [IAM 契约](iam.md)。按部门的数据范围、计算字段和状态流转仍需接入具体业务规则。
 
 生成器行为验证使用隔离 SQLite 项目；主服务集成另外使用 独立 PostgreSQL 测试库完成真实登录、动态菜单、权限拒绝、浏览器页面增删改查及重启持久化验证。这不代表生产迁移与部署已完成。
 
