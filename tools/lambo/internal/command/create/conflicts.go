@@ -7,7 +7,6 @@ import (
 	"go/token"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 )
 
@@ -35,6 +34,7 @@ func checkGoConflicts(root string, files []outputFile) error {
 					dirs = append(dirs, other)
 				}
 			}
+			dirs = append(dirs, filepath.Join("backend", "cmd", "server", "wire"), filepath.Join("backend", "internal", "platform", "httpserver"))
 		}
 		for _, current := range dirs {
 			if err := checkGoDir(root, current, file.Path, names, current == dir); err != nil {
@@ -81,6 +81,7 @@ func goDeclarations(path string, data []byte) (map[string]bool, error) {
 		return nil, fmt.Errorf("解析 Go 声明 %s：%w", path, err)
 	}
 	names := make(map[string]bool)
+	values := make(map[string]string)
 	for _, declaration := range file.Decls {
 		switch value := declaration.(type) {
 		case *ast.FuncDecl:
@@ -98,11 +99,11 @@ func goDeclarations(path string, data []byte) (map[string]bool, error) {
 							continue
 						}
 						names["Go 标识 "+name.Name] = true
-						if strings.HasSuffix(name.Name, "APIPath") && i < len(value.Values) {
-							if literal, ok := value.Values[i].(*ast.BasicLit); ok && literal.Kind == token.STRING {
-								path, err := strconv.Unquote(literal.Value)
-								if err == nil {
-									names[apiPathPrefix+path] = true
+						if i < len(value.Values) {
+							if literal, ok := routeString(value.Values[i], values); ok {
+								values[name.Name] = literal
+								if strings.HasSuffix(name.Name, "APIPath") {
+									names[apiPathPrefix+literal] = true
 								}
 							}
 						}
@@ -111,5 +112,6 @@ func goDeclarations(path string, data []byte) (map[string]bool, error) {
 			}
 		}
 	}
+	collectGoRoutes(file, values, names)
 	return names, nil
 }

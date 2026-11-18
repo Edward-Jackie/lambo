@@ -33,14 +33,20 @@ func iamDBError(err error) error {
 	return err
 }
 
+func (r *Repository) withIAMLock(ctx context.Context, change func(*gorm.DB) error) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Exec("SELECT pg_advisory_xact_lock(?)", iamWriteLock).Error; err != nil {
+			return err
+		}
+		return change(tx)
+	})
+}
+
 // 权限配置低频写入使用数据库事务锁，使授权、最后管理员检查和会话撤销成为同一事务。
 func (r *Repository) iamWrite(ctx context.Context, change func(*gorm.DB) error) error {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
-	return iamDBError(r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if err := tx.Exec("SELECT pg_advisory_xact_lock(?)", iamWriteLock).Error; err != nil {
-			return err
-		}
+	return iamDBError(r.withIAMLock(ctx, func(tx *gorm.DB) error {
 		if model.ActorID(ctx) == 0 {
 			return model.ErrIAMForbidden
 		}
