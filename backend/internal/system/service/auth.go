@@ -60,12 +60,15 @@ func NewAuthService(repo *repository.AuthRepository, conf *viper.Viper) (*AuthSe
 			}
 		}
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 	if conf.GetBool("data.auto_migrate") || conf.GetBool("bootstrap.enabled") {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
 		if err := repo.InitializeIAM(ctx); err != nil {
 			return nil, err
 		}
+	}
+	if err := repo.UpgradeIAM(ctx); err != nil {
+		return nil, err
 	}
 	return svc, nil
 }

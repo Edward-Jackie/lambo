@@ -15,15 +15,12 @@ var iamSeedSQL string
 
 // InitializeIAM 只初始化一次基础角色与菜单，不在后续启动时恢复人工撤销的权限。
 func (r *AuthRepository) InitializeIAM(ctx context.Context) error {
-	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if err := tx.Exec("SELECT pg_advisory_xact_lock(?)", iamWriteLock).Error; err != nil {
+	return r.withIAMLock(ctx, func(tx *gorm.DB) error {
+		initialized, err := iamMarked(tx, iamBootstrapKey)
+		if err != nil {
 			return err
 		}
-		var count int64
-		if err := tx.Model(&model.IAMMigration{}).Where("key=?", "rbac-v1").Count(&count).Error; err != nil {
-			return err
-		}
-		if count > 0 {
+		if initialized {
 			return nil
 		}
 		var accounts []model.Account
@@ -104,7 +101,7 @@ func (r *AuthRepository) InitializeIAM(ctx context.Context) error {
 		if err := tx.Where("1=1").Delete(&model.Session{}).Error; err != nil {
 			return err
 		}
-		return tx.Create(&model.IAMMigration{Key: "rbac-v1"}).Error
+		return tx.Create(&[]model.IAMMigration{{Key: iamBootstrapKey}, {Key: menuSeedFreshKey}}).Error
 	})
 }
 

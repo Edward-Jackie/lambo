@@ -52,13 +52,19 @@ type MenuRegistration struct {
 }
 
 type MenuCatalog struct {
-	Permissions map[string]string
-	Components  map[string]string
+	Permissions   map[string]string
+	Components    map[string]string
+	Registrations map[string]MenuRegistration
 }
 
 func NewMenuCatalog(modules ...MenuRegistration) MenuCatalog {
-	catalog := MenuCatalog{Permissions: PermissionCatalog(), Components: PageComponents()}
+	catalog := MenuCatalog{
+		Permissions:   PermissionCatalog(),
+		Components:    PageComponents(),
+		Registrations: make(map[string]MenuRegistration, len(modules)),
+	}
 	for _, module := range modules {
+		catalog.Registrations[module.Component] = module
 		catalog.Components[module.Component] = module.Title
 		for code, label := range module.Permissions {
 			if _, exists := catalog.Permissions[code]; !exists {

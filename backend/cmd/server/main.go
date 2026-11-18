@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/Edward-Jackie/lambo/backend/cmd/server/wire"
 	"github.com/Edward-Jackie/lambo/backend/pkg/config"
@@ -11,6 +12,13 @@ import (
 )
 
 func main() {
+	if len(os.Args) > 1 && os.Args[1] == "seed-menu" {
+		if err := seedMenu(os.Args[2:]); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		return
+	}
 	conf := config.NewConfig()
 	logger := log.NewLog(conf)
 

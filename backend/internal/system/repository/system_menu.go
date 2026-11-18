@@ -62,12 +62,16 @@ func (r *systemMenuRepository) CreateSystemMenu(ctx context.Context, item *model
 		if err := checkScope(tx, ctx, []model.SystemMenu{*item}); err != nil {
 			return err
 		}
-		if err := tx.Create(item).Error; err != nil {
-			return err
-		}
-		// 数字 ID 超出前端安全范围时回滚，避免保存后产生无法精确读取的记录。
-		return model.ValidateSystemMenuID(item.ID)
+		return persistSystemMenu(tx, item)
 	})
+}
+
+func persistSystemMenu(tx *gorm.DB, item *model.SystemMenu) error {
+	if err := tx.Create(item).Error; err != nil {
+		return err
+	}
+	// 数字 ID 超出前端安全范围时回滚，避免保存后产生无法精确读取的记录。
+	return model.ValidateSystemMenuID(item.ID)
 }
 
 func (r *systemMenuRepository) UpdateSystemMenu(ctx context.Context, id uint64, payload model.SystemMenuPayload) (*model.SystemMenu, error) {

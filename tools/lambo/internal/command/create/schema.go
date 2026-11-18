@@ -48,6 +48,10 @@ type templateData struct {
 	Module string
 }
 
+func (data templateData) MenuSeedMetadata() map[string]string {
+	return map[string]string{"domain": data.Domain, "name": data.Name, "title": data.Title, "routeName": "Business" + data.StructName(), "permission": data.Permission}
+}
+
 var namePattern = regexp.MustCompile(`^[a-z][a-z0-9]*(?:[-_][a-z0-9]+)*$`)
 var fieldPattern = regexp.MustCompile(`^[a-z][a-zA-Z0-9]*$`)
 var apiPattern = regexp.MustCompile(`^/[a-zA-Z0-9_-]+(?:/[a-zA-Z0-9_-]+)*$`)

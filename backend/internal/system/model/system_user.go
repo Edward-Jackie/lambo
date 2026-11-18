@@ -11,6 +11,7 @@ import (
 )
 
 const (
+	AccountUsernameIndex      = "ux_lambo_accounts_username"
 	SystemUserDefaultPageSize = 20
 	SystemUserMaxPageSize     = 100
 	SystemUserMaxPage         = 1000000

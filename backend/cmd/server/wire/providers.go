@@ -11,6 +11,7 @@ import (
 	"github.com/Edward-Jackie/lambo/backend/internal/platform/httpserver"
 	syshandler "github.com/Edward-Jackie/lambo/backend/internal/system/handler"
 	sysmodel "github.com/Edward-Jackie/lambo/backend/internal/system/model"
+	sysrepository "github.com/Edward-Jackie/lambo/backend/internal/system/repository"
 	"github.com/Edward-Jackie/lambo/backend/pkg/log"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
@@ -60,6 +61,10 @@ func provideDb(conf *viper.Viper, logger *log.Logger) (*gorm.DB, func(), error) 
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
+	if err := sysrepository.CheckUsernameUpgrade(ctx, db); err != nil {
+		cleanup()
+		return nil, nil, err
+	}
 	if err := platformdatabase.Migrate(ctx, db,
 		&sysmodel.Session{}, &sysmodel.SystemUser{}, &sysmodel.SystemRole{}, &sysmodel.SystemMenu{},
 		&sysmodel.AccountRole{}, &sysmodel.RoleMenu{}, &sysmodel.IAMMigration{},
